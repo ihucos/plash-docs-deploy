@@ -1,0 +1,469 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for shrink</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash shrink</pre>
+
+<h1>Description</h1>
+<pre>Delete half of the older containers.
+Containers with a lower build id will be deleted first.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink(){
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash shrink
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash clean --clean-index
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  out=$(ls $PLASH_DATA/index | xargs)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  test &#34;$out&#34; = &#34;$(echo $@)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash purge --yes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash init
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash data touch config/testmode
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode(){
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  tmp=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash add-layer &#34;$1&#34; &#34;$tmp&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># start from zero
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash purge --yes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash init
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash data touch config/testmode
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>If called with one node delete it,</h3>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>If called with no nodes, stay with no nodes</h3>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Two simple nodes</h3>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Create 2 containers with same parent</h3>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Create 3 containers with same parent</h3>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0 1 4
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Create some containers, where each has one child - except the leave</h3>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mknode 3
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0 1 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Create an older and a newer tree, ensure the older one gets deleted</h3>
+    
+  
+    
+      <pre style="display: inline;">tree_a=$(mknode 0)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_a1=$(mknode &#34;$tree_a&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_a2=$(mknode &#34;$tree_a&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">tree_b=$(mknode 0)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_b1=$(mknode &#34;$tree_b&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_b2=$(mknode &#34;$tree_b&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0 $tree_b $child_b1 $child_b2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Same as above but with an extra node in the second tree, this makes an extra node being deleted</h3>
+    
+  
+    
+      <pre style="display: inline;">tree_a=$(mknode 0)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_a1=$(mknode &#34;$tree_a&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_a2=$(mknode &#34;$tree_a&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">tree_b=$(mknode 0)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_b1=$(mknode &#34;$tree_b&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_b2=$(mknode &#34;$tree_b&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">child_b3=$(mknode &#34;$tree_b&#34;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0 $tree_b $child_b2 $child_b3
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Test with deferenced node</h3>
+    
+  
+    
+      <pre style="display: inline;">mknode 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash rm 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">testshrink 0
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>import math
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from collections import Counter
+
+from plash import utils
+
+DELETE_PERCENT = 50
+
+plash_data = utils.plash_call(&#34;data&#34;)
+index_dir = os.path.join(plash_data, &#34;index&#34;)
+links = os.listdir(index_dir)
+
+node_deletation_effect = Counter()
+nodepaths = {}
+for container_id in links:
+    try:
+        nodepath = os.path.realpath(os.path.join(index_dir, container_id))
+        os.stat(nodepath)  # raises the file not found if containers was deleted
+    except FileNotFoundError:
+        # broken link, it&#39;s `plash clean`s responsability to clean that
+        continue
+    nodepaths[container_id] = nodepath
+    components = nodepath.split(&#34;layer/&#34;)[-1].split(&#34;/&#34;)
+    node_deletation_effect.update(components)
+
+# don&#39;t mess around with the special root container
+del node_deletation_effect[&#34;0&#34;]
+
+nodes = list(node_deletation_effect.keys())
+nodes.sort(key=int)
+delete_quota = math.ceil(len(nodes) * DELETE_PERCENT / 100.0)
+mastertmp = utils.plash_call(&#34;mkdtemp&#34;)
+already_deleted = 0
+for container_id in nodes:
+    affected = node_deletation_effect[container_id]
+
+    # if we already fulfilled the delete quota, break
+    if already_deleted &gt;= delete_quota:
+        break
+
+    # delete this container if does not exceed the quota
+    if already_deleted + affected &lt;= delete_quota:
+        tmp = tempfile.mkdtemp(dir=mastertmp)
+        try:
+            os.rename(nodepaths[container_id], tmp)
+        except FileNotFoundError:
+            continue  # this or another process already deleted it
+        already_deleted += affected
+
+print(
+    &#34;dereferenced {} of {} containers&#34;.format(already_deleted, len(nodes)),
+    file=sys.stderr,
+)
+print(&#34;cleaning up...&#34;, file=sys.stderr)
+shutil.rmtree(mastertmp)</pre>
+
+
+</body>
+</html>

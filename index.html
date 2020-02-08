@@ -1,0 +1,934 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Plash documentation</title>
+</head>
+<body>
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<i>Last updated: 2020-02-08</i>
+<h1>Plash</h1>
+<h2>Command list</h2>
+</pre>
+<table>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="--help.html">--help</a>
+    
+  </td>
+  <td>
+    Alias for `plash help`
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="--help-macros.html">--help-macros</a>
+    
+  </td>
+  <td>
+    Alias for `plash help-macros`
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="--version.html">--version</a>
+    
+  </td>
+  <td>
+    Alias for `plash version`
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="-h.html">-h</a>
+    
+  </td>
+  <td>
+    Alias for `plash help`
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="add-layer.html">add-layer</a>
+    
+  </td>
+  <td>
+    Stack a layer on top of a container
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="b.html">b</a>
+    
+  </td>
+  <td>
+    Build then run utility
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="build.html">build</a>
+    
+  </td>
+  <td>
+    Builds a container
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="clean.html">clean</a>
+    
+  </td>
+  <td>
+    Cleanup internal states
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="copy.html">copy</a>
+    
+  </td>
+  <td>
+    Copy the container&#39;s root filesystem to directory
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="create.html">create</a>
+    
+  </td>
+  <td>
+    Creates a new container from a command
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="data.html">data</a>
+    
+  </td>
+  <td>
+    Prints the location of the build data
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="eval.html">eval</a>
+    
+  </td>
+  <td>
+    Generates a build script
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="export-tar.html">export-tar</a>
+    
+  </td>
+  <td>
+    Export container as tar archive
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="help.html">help</a>
+    
+  </td>
+  <td>
+    Prints help
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="help-macros.html">help-macros</a>
+    
+  </td>
+  <td>
+    Lists all available macros
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="import-docker.html">import-docker</a>
+    
+  </td>
+  <td>
+    Import image from local docker instance into
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="import-lxc.html">import-lxc</a>
+    
+  </td>
+  <td>
+    Import an image from https://images
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="import-tar.html">import-tar</a>
+    
+  </td>
+  <td>
+    Create a container from a tar file
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="import-url.html">import-url</a>
+    
+  </td>
+  <td>
+    Import a container from an url
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="init.html">init</a>
+    
+  </td>
+  <td>
+    Initialize build data
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="map.html">map</a>
+    
+  </td>
+  <td>
+    Map a container to a key
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="mkdtemp.html">mkdtemp</a>
+    
+  </td>
+  <td>
+    Create a temporary directory in the plash data
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="mount.html">mount</a>
+    
+  </td>
+  <td>
+    Mount a container-filesystem
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="nodepath.html">nodepath</a>
+    
+  </td>
+  <td>
+    Prints the path to a given container
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="parent.html">parent</a>
+    
+  </td>
+  <td>
+    Prints the containers parent container
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="purge.html">purge</a>
+    
+  </td>
+  <td>
+    Deletes all build data unatomically
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="rm.html">rm</a>
+    
+  </td>
+  <td>
+    Deletes the given container atomically
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="run.html">run</a>
+    
+  </td>
+  <td>
+    Run a container
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="runopts.html">runopts</a>
+    
+  </td>
+  <td>
+    Run a container specifying lower level options
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="shallow-copy.html">shallow-copy</a>
+    
+  </td>
+  <td>
+    Copy and hard link the filesystem to OUT
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="shrink.html">shrink</a>
+    
+  </td>
+  <td>
+    Delete half of the older containers
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="sudo.html">sudo</a>
+    
+  </td>
+  <td>
+    Setup a Linux user namespace
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="test.html">test</a>
+    
+  </td>
+  <td>
+    Run unit tests
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      <a href="version.html">version</a>
+    
+  </td>
+  <td>
+    Prints the version number
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    
+      <a href="with-mount.html">with-mount</a>
+    
+  </td>
+  <td>
+    Execute parameters inside a mounted container
+  </td>
+</tr>
+
+<tr bgcolor=lightpink>
+  <td>
+    
+      -*
+    
+  </td>
+  <td>
+    Fallback to `plash b run`
+  </td>
+</tr>
+
+</table>
+
+<h2>Command Dependencies</h2>
+<img src="graph.svg"></img>
+
+<h2>Build commands ("macros")</h2>
+
+<table>
+
+<tr bgcolor=white>
+  <td>
+    hint
+  </td>
+  <td>
+    Write a hint for consumer programs
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    import
+  </td>
+  <td>
+    Import macros from any python module
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    reset-imports
+  </td>
+  <td>
+    Unimport all imported macros but builtins
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    entrypoint
+  </td>
+  <td>
+    Hint default command for this build
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    entrypoint-script
+  </td>
+  <td>
+    Write lines to /entrypoint and hint it as default command
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    eval-file
+  </td>
+  <td>
+    Evaluate file content as expressions
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    eval-github
+  </td>
+  <td>
+    Eval a file (default &#39;plashfile&#39;) from a github repo
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    eval-stdin
+  </td>
+  <td>
+    Evaluate expressions read from stdin
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    eval-string
+  </td>
+  <td>
+    Evaluate expressions passed as string
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    hash-path
+  </td>
+  <td>
+    Recursively hash files and add as cache key
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    import-env
+  </td>
+  <td>
+    Import environment variables from host
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    inline
+  </td>
+  <td>
+    Emit all arguments in one line
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    invalidate-layer
+  </td>
+  <td>
+    Invalidate the cache of the current layer
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    layer
+  </td>
+  <td>
+    Hints the start of a new layer
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    run
+  </td>
+  <td>
+    Directly emit shell script
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    run-stdin
+  </td>
+  <td>
+    Run commands read from stdin
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    write-file
+  </td>
+  <td>
+    Write lines to a file
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    write-script
+  </td>
+  <td>
+    Write an executable (755) file to the filesystem
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    from
+  </td>
+  <td>
+    Guess from where to take the image
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    from-docker
+  </td>
+  <td>
+    Use image from local docker
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    from-github
+  </td>
+  <td>
+    Build and use a file (default &#39;plashfile&#39;) from a github repo
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    from-id
+  </td>
+  <td>
+    Specify the image from an image id
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    from-lxc
+  </td>
+  <td>
+    Use images from images.linuxcontainers.org
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    from-map
+  </td>
+  <td>
+    Use resolved map as image
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    from-url
+  </td>
+  <td>
+    Import image from an url
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    add-apt-repository
+  </td>
+  <td>
+    Install packages with add-apt-repository
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    apk
+  </td>
+  <td>
+    Install packages with apk
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    apt
+  </td>
+  <td>
+    Install packages with apt
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    defpm
+  </td>
+  <td>
+    Define a new package manager
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    dnf
+  </td>
+  <td>
+    Install packages with dnf
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    emerge
+  </td>
+  <td>
+    Install packages with emerge
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    npm
+  </td>
+  <td>
+    Install packages with npm
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    pacman
+  </td>
+  <td>
+    Install packages with pacman
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    pip
+  </td>
+  <td>
+    Install packages with pip
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    pip3
+  </td>
+  <td>
+    Install packages with pip3
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    yum
+  </td>
+  <td>
+    Install packages with yum
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    A
+  </td>
+  <td>
+    Alias for: --from alpine:edge --apk [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    C
+  </td>
+  <td>
+    Alias for: --from centos:8 --yum [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    D
+  </td>
+  <td>
+    Alias for: --from debian:sid --apt [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    F
+  </td>
+  <td>
+    Alias for: --from fedora:31 --dnf [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    G
+  </td>
+  <td>
+    Alias for: --from gentoo:current --emerge [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    R
+  </td>
+  <td>
+    Alias for: --from archlinux:current --pacman [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    U
+  </td>
+  <td>
+    Alias for: --from ubuntu:bionic --apt [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    f
+  </td>
+  <td>
+    Alias for: --from [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=white>
+  <td>
+    l
+  </td>
+  <td>
+    Alias for: --layer [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+<tr bgcolor=lightblue>
+  <td>
+    x
+  </td>
+  <td>
+    Alias for: --run [arg1 [arg2 [...]]]
+  </td>
+</tr>
+
+</table>
+
+
+<h2>Breadcrumbs</h2>
+<h3>Image editing with gimp</h3>
+<pre>$ plash build --from alpine --apk ttf-ubuntu-font-family gimp --layer --run 'touch /myfile'
+112
+$ plash run 112 gimp</pre>
+
+<h3>Run python scripts</h3>
+<pre>plash --from-github ihucos/python -- python myscript.py</pre>
+
+<h3>Integration with docker</h3>
+<pre>plash export-tar --from alpine | docker import -
+plash --from-docker busybox
+</pre>
+
+<h3>Manage your dotfiles</h3>
+<pre>plash -A py3-pip --layer --pip3 dotfiles -- dotfiles --sync</pre>
+
+<h3>User namespaces</h3>
+<pre>$ whoami
+myuser
+$ plash sudo whoami
+root</pre>
+
+<h3>Fetch a  container image</h3>
+<pre>$ plash build --from alpine
+plash: fetching 100%
+plash: extracting...
+plash: ignoring dev file: ./dev/null (Operation not permitted)
+2</pre>
+
+<h3>Run something in a container</h3>
+<pre>$ plash run 2 printf 'hello from container\n'
+hello from container</pre>
+
+<h3>Automatic filesystem mapping</h3>
+<pre>$ mkdir ~/mydir
+$ cd ~/mydir
+$ plash run 2 pwd
+/home/myuser/mydir</pre>
+
+<h3>Add layer to existing container</h3>
+<pre>$ plash build --from 2 --run 'touch /myfile'
++ touch /myfile
+--:
+3</pre>
+
+<h3>Build and run in one command</h3>
+<pre>$ plash b run --from alpine --run 'touch /myfile' -- ls /myfile
+/myfile</pre>
+
+<h3>Shorter invocation</h3>
+<pre>$ plash -Ax 'touch /myfile' -- ls /myfile
+/myfile</pre>
+
+<h3>Explicit layering</h3>
+<pre>$ plash -Ax 'touch /myfile' -lx 'touch /otherfile' -- ls /otherfile </pre>
+
+<h3>Access container root filesystem</h3>
+<pre>$ plash b with-mount -A -- ls
+bin  dev  etc  home  lib  media  mnt  proc  root  run  sbin  srv  sys  tmp  usr  var</pre>
+
+<h3>Remove last layer of an image</h3>
+<pre>$ plash b rm --from-github ihucos/python</pre>
+
+<h3>Create an executable build file</h3>
+<pre>$ cat /tmp/yapf
+#!/usr/bin/env plash-exec
+--from-github ihucos/python
+--pip3 yapf
+--entrypoint /usr/bin/yapf
+$ /tmp/yapf myproject</pre>
+
+<h3>Example of a more complex executable build file</h3>
+<pre>#!/usr/bin/env plash-exec
+--from archlinux
+--pacman gtk3 python-gobject
+--layer
+--entrypoint-script 
+#!/usr/bin/env python
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+Gtk.init(None)
+Hello = Gtk.MessageDialog(message_type=Gtk.MessageType.INFO,
+                          buttons=Gtk.ButtonsType.OK,
+                          text="Hello world!",
+                          secondary_text="This is running inside a plash container.")
+Hello.run()</pre>
+
+<h3>Macros expand to shell code</h3>
+<pre>$ plash eval --from ubuntu --apt python3-pip --layer --pip3 yapf -lx 'touch /foo'
+### plash hint: image=9
+apt-get update
+apt-get install -y python3-pip
+### plash hint: layer
+pip3 install yapf
+### plash hint: layer
+touch /foo</pre>

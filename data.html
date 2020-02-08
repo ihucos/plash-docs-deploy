@@ -1,0 +1,251 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for data</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash data [CMD1 [CMD2 ...]]</pre>
+
+<h1>Description</h1>
+<pre>Prints the location of the build data.
+if arguments are given, these arguments will be execed insite the build data.</pre>
+
+
+  <h1>Example</h1>
+  <pre>$ plash data
+/home/myuser/.plashdata
+
+$ plash data cat config/union_taste
+unionfs-fuse</pre>
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Argument is executed</h3>
+    
+  
+    
+      <pre style="display: inline;">test hi = &#34;$(plash data printf &#34;hi&#34;)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Argument is executed in plash data</h3>
+    
+  
+    
+      <pre style="display: inline;">plash data ls | grep mnt
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash data ls | grep tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash data ls | grep layer
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Argument is executed in directory returned by invocation with no arguments</h3>
+    
+  
+    
+      <pre style="display: inline;">out1=$(plash data pwd)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out2=$(plash data)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out1&#34; = &#34;$out2&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Home influences the plash data</h3>
+    
+  
+    
+      <pre style="display: inline;">test $(
+</pre>
+    
+  
+    
+      <pre style="display: inline;">unset PLASH_DATA
+</pre>
+    
+  
+    
+      <pre style="display: inline;">HOME=xx
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash data
+</pre>
+    
+  
+    
+      <pre style="display: inline;">) = &#34;xx/.plashdata&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Plash_data is the plash data if set</h3>
+    
+  
+    
+      <pre style="display: inline;">test $(PLASH_DATA=xx plash data) = xx
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Home directory in /etc/passwd is consulted as fallback</h3>
+    
+  
+    
+      <pre style="display: inline;">homedir=$(getent passwd &#34;$(id -u)&#34; | cut -d: -f6)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$(
+</pre>
+    
+  
+    
+      <pre style="display: inline;">unset HOME
+</pre>
+    
+  
+    
+      <pre style="display: inline;">unset PLASH_DATA
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash data
+</pre>
+    
+  
+    
+      <pre style="display: inline;">)&#34; = &#34;$homedir&#34;/.plashdata
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>#define _GNU_SOURCE
+
+#include &lt;pwd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+char *get_home_dir() {
+  struct passwd *pwd;
+  char *home_env;
+  if (!(home_env = getenv(&#34;HOME&#34;))) {
+    pwd = getpwuid(getuid());
+    if (!pwd)
+      pl_fatal(&#34;could not determine your home directory&#34;);
+    return pwd-&gt;pw_dir;
+  }
+  return home_env;
+}
+
+char *get_plash_data() {
+  char *plash_data;
+  if (!(plash_data = getenv(&#34;PLASH_DATA&#34;))) {
+    if (asprintf(&amp;plash_data, &#34;%s/.plashdata&#34;, get_home_dir()) == -1)
+      pl_fatal(&#34;asprintf&#34;);
+  }
+  return plash_data;
+}
+
+int main(int argc, char *argv[]) {
+  char *plash_data = get_plash_data();
+
+  // if no arguments, print the plash data directory
+  if (argc == 1) {
+    puts(plash_data);
+    return 0;
+  }
+
+  // if arguments given, cd to plash data and exec the arguments
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir %s&#34;, plash_data);
+  argv++;
+  execvp(argv[0], argv);
+  pl_fatal(&#34;exec %s&#34;, argv[0]);
+}</pre>
+
+
+</body>
+</html>

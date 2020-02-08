@@ -1,0 +1,176 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for shallow-copy</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash shallow-copy CONTAINER OUT</pre>
+
+<h1>Description</h1>
+<pre>Copy and hard link the filesystem to OUT.
+This will export a root filesystem to OUT with minimal overhead. Directories
+are copied with their metadata, but all files are hard linked. you can
+imagine them pointing to the real file inside the plash data. This takes only
+a short time and saves disk space. The downside is that you have to be very
+carefull to not change files, since this would change the plashdata build
+data and affect other containers.</pre>
+
+
+  <h1>Example</h1>
+  <pre>$ mkdir /tmp/mydir
+$ plash b shallow-copy --from ubuntu -- /tmp/mydir/ubuntu
+$ plash b shallow-copy --from ubuntu --apt git -- /tmp/mydir/ubuntu-with-git
+$ plash sudo du -sh /tmp/mydir/ubuntu
+413M    /tmp/mydir/ubuntu
+$ plash sudo du -sh /tmp/mydir/ubuntu-with-git/
+407M    /tmp/mydir/ubuntu-with-git/
+$ plash sudo du -sh /tmp/mydir/
+423M    /tmp/mydir/
+
+See https://en.wikipedia.org/wiki/Object_copying#Shallow_copy</pre>
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash build -f 1 --run &#39;touch /da&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">tmp=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash b shallow-copy -f 2 -- &#34;$tmp&#34;/rootfs
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$(ls &#34;$tmp&#34;/rootfs)&#34; = &#34;$(echo &#39;bin da dev etc home proc root sys tmp usr var&#39; | tr &#39; &#39; &#39;\n&#39;)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">origi_inode=$(plash nodepath 2 | xargs -I{} stat --format &#39;%i&#39; {}/_data/root/da)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">shallow_copy_inode=$(stat --format &#39;%i&#39; &#34;$tmp&#34;/rootfs/da)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$origi_inode&#34; = &#34;$shallow_copy_inode&#34;
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>
+from plash import utils
+import subprocess
+import tarfile
+import sys
+import os
+import io
+
+utils.unshare_user()
+utils.unshare_mount()
+
+try:
+    container = sys.argv[1]
+    outdir = sys.argv[2]
+except IndexError:
+    utils.die_with_usage()
+
+nodepath = utils.plash_call(&#34;nodepath&#34;, container)
+tmpout = utils.plash_call(&#34;mkdtemp&#34;)
+plash_data = utils.plash_call(&#34;data&#34;)
+
+mountpoint = os.path.join(plash_data, &#34;mnt&#34;)
+
+utils.plash_call(&#34;mount&#34;, container, mountpoint)
+
+io_bytes = io.BytesIO()
+dirs_only_tar = tarfile.open(fileobj=io_bytes, mode=&#34;w:xz&#34;)
+
+file_list = []
+for subdir, dirs, files in os.walk(mountpoint):
+
+    rel_subdir = os.path.relpath(subdir, mountpoint)
+    for dir in dirs:
+        reldir = os.path.join(rel_subdir, dir)
+        realdir = os.path.join(subdir, dir)
+        dirs_only_tar.add(realdir, reldir, recursive=False)
+
+    for file in files:
+        file_list.append(os.path.join(rel_subdir, file))
+
+dirs_only_tar.close()
+io_bytes.seek(0)
+subprocess.call([&#34;umount&#34;, mountpoint])
+
+# write all directories (empty) to tmpout
+tar = tarfile.open(fileobj=io_bytes, mode=&#34;r&#34;)
+tar.extractall(tmpout)
+
+parts = list(reversed(nodepath.split(&#34;/layer/&#34;)[-1].split(&#34;/&#34;)))
+resolve_paths = [os.path.join(plash_data, &#34;index&#34;, i, &#34;_data&#34;, &#34;root&#34;) for i in parts]
+
+for file in file_list:
+    target = os.path.join(tmpout, file)
+    for resolve_path in resolve_paths:
+        src = os.path.join(resolve_path, file)
+        try:
+            os.link(src, target, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            break
+
+with utils.catch_and_die([OSError]):
+    os.rename(tmpout, outdir)</pre>
+
+
+</body>
+</html>

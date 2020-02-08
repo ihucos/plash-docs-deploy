@@ -1,0 +1,87 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for copy</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash copy CONTAINER DIR</pre>
+
+<h1>Description</h1>
+<pre>Copy the container&#39;s root filesystem to directory.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Copying out a file system succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">tmpd=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash copy 1 &#34;$tmpd&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">ls &#34;$tmpd&#34;/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">ls &#34;$tmpd&#34;/etc
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>from os.path import abspath
+import os
+import sys
+
+from plash import utils
+
+utils.assert_initialized()
+utils.unshare_user()
+
+try:
+    container, outdir = sys.argv[1:3]
+except ValueError:
+    utils.die_with_usage()
+
+tmpout = utils.plash_call(&#34;mkdtemp&#34;)
+
+utils.plash_call(&#34;with-mount&#34;, container, &#34;cp&#34;, &#34;-r&#34;, &#34;.&#34;, tmpout)
+
+with utils.catch_and_die([OSError]):
+    os.rename(tmpout, outdir)</pre>
+
+
+</body>
+</html>

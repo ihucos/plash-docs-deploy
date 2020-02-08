@@ -1,0 +1,81 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for -h</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash help [SUBCOMMAND]</pre>
+
+<h1>Description</h1>
+<pre>Prints help. List all commands or prints a help text for one
+command.</pre>
+
+
+
+
+
+<h1>Source Code</h1>
+<pre>import sys
+import os
+from os import listdir
+from os.path import dirname, join, islink
+import re
+
+from plash import utils
+
+FIRST_SENTENCE_RE = &#34;# usage: .*?\n(?:#\n)*?# (.*?)\.&#34;.replace(&#34;#&#34;, &#34;(?:#|//)&#34;)
+
+
+libexecdir = os.path.dirname(sys.argv[0])
+if len(sys.argv) &gt;= 2:
+    cmd = sys.argv[1]
+    prog_path = os.path.join(libexecdir, cmd)
+    if os.access(prog_path + &#34;.c&#34;, os.F_OK):
+        prog_path += &#34;.c&#34;
+    try:
+        with open(prog_path) as f:
+            do_print = False
+            for line in f.readlines():
+                if line.startswith(&#34;# usage:&#34;) or line.startswith(&#34;// usage:&#34;):
+                    do_print = True
+                elif line and not (line.startswith(&#34;#&#34;) or line.startswith(&#34;//&#34;)):
+                    break
+                if do_print:
+                    print(line[2:].rstrip(&#34;\n&#34;))
+    except FileNotFoundError:
+        utils.die(&#34;no such command: {}&#34;.format(cmd))
+    sys.exit(0)
+
+bin = dirname(sys.argv[0])
+progs = [i for i in listdir(bin) if os.access(join(bin, i), os.X_OK)]
+max_prog_lenght = len(&#34;plash &#34;) + max(len(prog) for prog in progs)
+for prog in sorted(progs):
+    prog_path = join(bin, prog)
+
+    if os.access(prog_path + &#34;.c&#34;, os.F_OK):
+        prog_path += &#34;.c&#34;
+
+    if islink(prog_path):
+        # continue # it&#39;s an alias
+        links_to = os.readlink(prog_path)
+        first_sentence = &#34;Alias for `plash {}`&#34;.format(links_to)
+    else:
+        with open(prog_path) as f:
+            content = f.read()
+        found = re.findall(FIRST_SENTENCE_RE, content)
+        if not found:
+            first_sentence = &#34;&lt;empty&gt;&#34;
+        else:
+            first_sentence = found[0]
+
+    assert first_sentence
+    print((&#34;plash &#34; + prog).ljust(max_prog_lenght), first_sentence)
+print((&#34;plash &#34; + &#34;-*&#34;).ljust(max_prog_lenght), &#34;Fallback to `plash b run`&#34;)</pre>
+
+
+</body>
+</html>

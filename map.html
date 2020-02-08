@@ -1,0 +1,304 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for map</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash map KEY [ CONTAINER ]</pre>
+
+<h1>Description</h1>
+<pre>Map a container to a key. Use an empty container to delete a key.</pre>
+
+
+  <h1>Example</h1>
+  <pre>$ plash build -f alpine
+342
+
+$ plash map myfavorite 342
+
+$ plash map myfavorite
+342
+
+$ plash build --from-map myfavorite
+342
+
+$ plash map myfavorite &#39;&#39;
+
+$ plash map myfavorite
+$</pre>
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -xeu
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># create a container 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash create 1 true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Setting key succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash map mykey 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Accessing key returns setted key</h3>
+    
+  
+    
+      <pre style="display: inline;">test $(plash map mykey) == 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Overwriting setted key succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash map mykey 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test $(plash map mykey) == 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Set cache for not existing container fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash map thisismykey 9999999999)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Remove cache key succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash map rkey 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash map rkey &#39;&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Accessing removed cache key return empty string</h3>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash map rkey)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = &#34;&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Accessing  cache key that never existed returns empty string</h3>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash map mykeydoesnotestits)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = &#34;&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Removing removed key succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash map mkey 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash map mkey &#39;&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash map mkey &#39;&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Setting key with a `/` fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash map hi/da 1)
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>#define _GNU_SOURCE
+#include &lt;assert.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;libgen.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+char *plash_data;
+
+void get(char const *linkpath) {
+  char *nodepath;
+  nodepath = realpath(linkpath, NULL);
+  if (nodepath == NULL) {
+    if (errno == ENOENT)
+      return;
+    pl_fatal(&#34;realpath&#34;);
+  }
+  puts(basename(nodepath));
+}
+
+void del(char const *linkpath) {
+  if (unlink(linkpath) == -1) {
+    if (errno == ENOENT)
+      return;
+    pl_fatal(&#34;unlink&#34;);
+  }
+}
+
+void set(char const *linkpath, char *container_id) {
+  char *nodepath;
+
+  nodepath = pl_call(&#34;nodepath&#34;, container_id);
+
+  if (chdir(pl_call(&#34;mkdtemp&#34;)) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (asprintf(&amp;nodepath, &#34;..%s&#34;, nodepath + strlen(plash_data)) == -1)
+    pl_fatal(&#34;asprintf&#34;);
+  if (symlink(nodepath, &#34;link&#34;) == -1)
+    pl_fatal(&#34;symlink&#34;);
+  if (rename(&#34;link&#34;, linkpath) == -1)
+    pl_fatal(&#34;rename&#34;);
+}
+
+int main(int argc, char *argv[]) {
+
+  char *linkpath;
+
+  if (argc &lt; 2) {
+    pl_usage();
+  }
+
+  plash_data = pl_call(&#34;data&#34;);
+  assert(plash_data);
+  assert(plash_data[0] == &#39;/&#39;);
+
+  // validate map key
+  if (!argv[1][0])
+    pl_fatal(&#34;empty map name not allowed&#34;);
+  else if (strchr(argv[1], &#39;/&#39;) != NULL)
+    pl_fatal(&#34;&#39;/&#39; not allowed in map name&#34;);
+
+  // the location of the symlink for this map key
+  if (asprintf(&amp;linkpath, &#34;%s/map/%s&#34;, plash_data, argv[1]) == -1)
+    pl_fatal(&#34;asprintf&#34;);
+
+  if (argc == 2) {
+    get(linkpath);
+  } else if (argc == 3 &amp;&amp; !argv[2][0]) {
+    del(linkpath);
+  } else if (argc == 3) {
+    set(linkpath, argv[2]);
+  } else
+    pl_usage();
+}</pre>
+
+
+</body>
+</html>

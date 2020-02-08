@@ -1,0 +1,79 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for import-url</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash import-url URL [ GPG_SIGNATURE_URL ]</pre>
+
+<h1>Description</h1>
+<pre>Import a container from an url.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Import of bad url fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash import-url http://example.com/deosnotexists_and_never_will_789349)
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>if [ -z &#34;$1&#34; ]; then
+  echo &#34;usage: plash import-url URL [ GPG_SIGNATURE_URL ]&#34; &gt;&amp;2
+  exit 1
+fi
+
+set -e
+set -o pipefail
+
+# https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
+script_dir=&#34;$( cd &#34;$( dirname &#34;${BASH_SOURCE[0]}&#34; )&#34; &gt;/dev/null 2&gt;&amp;1 &amp;&amp; pwd )&#34;
+
+gpg_keyring=&#34;$script_dir&#34;/../data/trusted_gpg_keyring
+tmpdir=$(plash mkdtemp)
+rootfs=&#34;$tmpdir/rootfs&#34;
+rootfs_sig=&#34;$tmpdir/rootfs.asc&#34;
+
+# downlaod given availabe url
+curl --progress-bar --fail --location --output &#34;$rootfs&#34; &#34;$1&#34;
+
+# maybe check the signature
+if [ -n &#34;$2&#34; ] &amp;&amp; hash gpgv 2&gt; /dev/null; then
+   curl --silent --location --fail &#34;$2&#34; --output &#34;$rootfs_sig&#34;
+   gpgv --quiet --keyring &#34;$gpg_keyring&#34; &#34;$rootfs_sig&#34; &#34;$rootfs&#34;
+fi
+
+echo &#34;plash: extracting...&#34; &gt;&amp;2
+exec plash import-tar &#34;$rootfs&#34;</pre>
+
+
+</body>
+</html>

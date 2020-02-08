@@ -1,0 +1,83 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for parent</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash parent CONTAINER</pre>
+
+<h1>Description</h1>
+<pre>Prints the containers parent container.</pre>
+
+
+  <h1>Example</h1>
+  <pre>$ plash parent 89
+88</pre>
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Basic tests</h3>
+    
+  
+    
+      <pre style="display: inline;">plash build -f 1 --invalidate-layer
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test $(plash parent 2) = 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test $(plash parent 1) = 0
+</pre>
+    
+  
+    
+      <pre style="display: inline;">(! $(plash parent 0))
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>#include &lt;libgen.h&gt;
+#include &lt;plash.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(int argc, char *argv[]) {
+  if (argc != 2)
+    pl_usage();
+
+  char *nodepath = pl_call(&#34;nodepath&#34;, argv[1]);
+
+  puts(basename(dirname(nodepath)));
+}</pre>
+
+
+</body>
+</html>

@@ -1,0 +1,273 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for mount</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash mount CONTAINER MOUNTPOINT [ CHANGESDIR ]</pre>
+
+<h1>Description</h1>
+<pre>Mount a container-filesystem. To cleanup you need to unmount it manually.
+Changes to the filesystem will be written to CHANGESDIR, if ommited a
+temporary directory will be used.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">tmp=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash mount 1 $tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">grep  $tmp&#39; &#39;  /proc/mounts &gt;/dev/null || {
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  echo &#39;Could not find mountpoint in /proc/mounts &#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  exit 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -d $tmp/usr
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -d $tmp/bin
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -d $tmp/var
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Check bad chars</h3>
+    
+  
+    
+      <pre style="display: inline;">tmp=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">changesdir=$tmp/&#39;!@#$%^&amp;*()&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mkdir $tmp/mp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mkdir $changesdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">(! plash mount 1 /tmp/mp &#34;$changesdir&#34; )
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>import os
+import shutil
+import sys
+from os.path import join
+from subprocess import CalledProcessError, check_call
+
+from plash import utils
+
+utils.assert_initialized()
+
+try:
+    container, mountpoint = sys.argv[1:3]
+    if len(sys.argv) &gt;= 4:
+        changedir = sys.argv[3]
+    else:
+        changedir = None
+except ValueError:
+    utils.die_with_usage()
+
+nodepath = utils.plash_call(&#34;nodepath&#34;, container)
+
+container_ids_path = []
+parts = nodepath.split(&#34;/&#34;)
+while True:
+    pop = parts.pop()
+    container_ids_path.append(pop)
+    if pop == &#34;0&#34;:
+        break
+
+# use the symlinks and not the full paths because the arg size is limited
+# On my setup i get 58 (EDIT: should be more now) layers before an error,
+# we could have multiple mount calls to overcome this
+plash_data = utils.plash_call(&#34;data&#34;)
+lowerdir_list = [
+    join(plash_data, &#34;index&#34;, i, &#34;_data&#34;, &#34;root&#34;) for i in container_ids_path
+]
+
+
+def mount_unionfs(lowerdir_list, mountpoint, changedir):
+    lowerdirs_str = &#34;:&#34;.join(&#34;{}=RO&#34;.format(i) for i in lowerdir_list)
+    if changedir:
+        upperdir = os.path.join(changedir, &#34;data&#34;)
+        os.makedirs(upperdir, exist_ok=True)
+        upperdir_str = &#34;{}=RW:&#34;.format(upperdir)
+    else:
+        upperdir_str = &#34;&#34;
+
+    unionfs = (
+        shutil.which(&#34;unionfs&#34;)
+        or shutil.which(&#34;unionfs-fuse&#34;)
+        or utils.die(&#34;unionfs-fuse seems not to be installed&#34;)
+    )
+    with utils.catch_and_die([CalledProcessError, FileNotFoundError]):
+        check_call(
+            [
+                unionfs,
+                &#34;-o&#34;,
+                &#34;cow&#34;,
+                &#34;{upperdir}{lowerdirs}&#34;.format(
+                    lowerdirs=lowerdirs_str, upperdir=upperdir_str
+                ),
+                mountpoint,
+            ],
+            stdout=2,
+        )
+
+
+def mount_overlay(lowerdirs_list, mountpoint, changedir):
+    if changedir:
+        workdir = os.path.join(changedir, &#34;work&#34;)
+        upperdir = os.path.join(changedir, &#34;data&#34;)
+        os.makedirs(workdir, exist_ok=True)
+        os.makedirs(upperdir, exist_ok=True)
+    else:
+        workdir = None
+        upperdir = None
+    with utils.catch_and_die([CalledProcessError, FileNotFoundError]):
+        check_call(
+            [
+                &#34;mount&#34;,
+                &#34;-t&#34;,
+                &#34;overlay&#34;,
+                &#34;overlay&#34;,
+                &#34;-o&#34;,
+                &#34;lowerdir={lowerdir}{workdir}{upperdir}&#34;.format(
+                    lowerdir=&#34;:&#34;.join(lowerdir_list),
+                    upperdir=&#34;,upperdir=&#34; + upperdir if upperdir else &#34;&#34;,
+                    workdir=&#34;,workdir=&#34; + workdir if workdir else &#34;&#34;,
+                ),
+                mountpoint,
+            ],
+            stdout=2,
+        )
+
+
+def mount_fuse_overlayfs(lowerdirs_list, mountpoint, changedir):
+    if not changedir:
+        changedir = utils.plash_call(&#34;mkdtemp&#34;)
+        check_mount_option_part(changedir)
+    workdir = os.path.join(changedir, &#34;work&#34;)
+    upperdir = os.path.join(changedir, &#34;data&#34;)
+    os.makedirs(workdir, exist_ok=True)
+    os.makedirs(upperdir, exist_ok=True)
+    with utils.catch_and_die([CalledProcessError, FileNotFoundError]):
+        check_call(
+            [
+                &#34;fuse-overlayfs&#34;,
+                &#34;-o&#34;,
+                &#34;lowerdir={lowerdir}{workdir}{upperdir}&#34;.format(
+                    lowerdir=&#34;:&#34;.join(lowerdir_list),
+                    upperdir=&#34;,upperdir=&#34; + upperdir if upperdir else &#34;&#34;,
+                    workdir=&#34;,workdir=&#34; + workdir if workdir else &#34;&#34;,
+                ),
+                mountpoint,
+            ]
+        )
+
+
+def check_mount_option_part(dir):
+    if (
+        dir
+        and not dir.replace(&#34;.&#34;, &#34;&#34;)
+        .replace(&#34;/&#34;, &#34;&#34;)
+        .replace(&#34;_&#34;, &#34;&#34;)
+        .replace(&#34;-&#34;, &#34;&#34;)
+        .isalnum()
+    ):
+        utils.die(
+            &#34;cowardly dying: bad char(s) in unionfs-fuse/overlay arg: {}&#34;.format(dir)
+        )
+
+
+known_union_tastes = {
+    &#34;overlay&#34;: mount_overlay,
+    &#34;unionfs-fuse&#34;: mount_unionfs,
+    &#34;fuse-overlayfs&#34;: mount_fuse_overlayfs,
+}
+
+with open(os.path.join(plash_data, &#34;config&#34;, &#34;union_taste&#34;)) as f:
+    union_taste = f.read().rstrip(&#34;\n&#34;)
+
+try:
+    mount_func = known_union_tastes[union_taste]
+except KeyError:
+    utils.die(
+        &#34;unexpected union taste: {} (try {})&#34;.format(
+            union_taste, &#34; or &#34;.join(known_union_tastes.keys())
+        )
+    )
+
+for l in lowerdir_list:
+    check_mount_option_part(l)
+check_mount_option_part(changedir)
+mount_func(lowerdir_list, mountpoint, changedir)</pre>
+
+
+</body>
+</html>

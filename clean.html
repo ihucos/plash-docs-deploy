@@ -1,0 +1,375 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for clean</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash clean</pre>
+
+<h1>Description</h1>
+<pre>Cleanup internal states.
+
+there may be some abstraction leaks with cleaning up fuse mountpoints that
+will be handled better in the future. File a bug if this subcommand behaves
+unexpectedly.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -exu
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># build container 2 and 3
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash build -f 1 --invalidate-layer
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Simple invocation succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash clean
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>$plash_data/index is cleaned up</h3>
+    
+  
+    
+      <pre style="display: inline;">out_before=$(ls &#34;$PLASH_DATA&#34;/index)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash rm 2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash clean
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out_after=$(ls &#34;$PLASH_DATA&#34;/index)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out_before&#34; != &#34;$out_after&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>$plash_data/map is cleaned up</h3>
+    
+  
+    
+      <pre style="display: inline;">cont=$(plash build -f 1 --invalidate-layer)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash map key1 &#34;$cont&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash map key2 &#34;$cont&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash map key3 &#34;$cont&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls &#34;$PLASH_DATA&#34;/map)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">echo &#34;$out&#34; | grep key1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">echo &#34;$out&#34; | grep key2
+</pre>
+    
+  
+    
+      <pre style="display: inline;">echo &#34;$out&#34; | grep key3
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash rm 3  # delete the container the maps are referencing to
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash clean --clean-cache-keys
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls &#34;$PLASH_DATA&#34;/map/)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = &#34;&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>$plash_data/tmp is cleaned up</h3>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls &#34;$PLASH_DATA&#34;/tmp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = &#34;&#34; # assert empty tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash b run -f 1 -- true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls &#34;$PLASH_DATA&#34;/tmp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">echo &#34;$out&#34; | grep plashtmp # assert output contains plashtmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash clean --clean-tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls &#34;$PLASH_DATA&#34;/tmp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = &#34;&#34; # assert empty tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Bad files n $plash_data do not lead to crash</h3>
+    
+  
+    
+      <pre style="display: inline;">touch &#34;$PLASH_DATA&#34;/index/mybadfile
+</pre>
+    
+  
+    
+      <pre style="display: inline;">touch &#34;$PLASH_DATA&#34;/map/mybadfile
+</pre>
+    
+  
+    
+      <pre style="display: inline;">touch &#34;$PLASH_DATA&#34;/tmp/mybadfile
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash clean
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>import math
+import os
+import shutil
+import signal
+import sys
+from collections import Counter
+from time import time
+
+from plash import utils
+
+utils.assert_initialized()
+utils.unshare_user()
+
+plash_data = utils.plash_call(&#34;data&#34;)
+
+print(&#34;output_stable: false&#34;)
+
+
+def remove_broken_links(dir):
+    count = 0
+    for file in os.listdir(dir):
+        full_path = os.path.join(dir, file)
+        try:
+            os.stat(full_path)
+        except FileNotFoundError:
+            try:
+                os.unlink(full_path)
+                count += 1
+            except FileNotFoundError:
+                pass  # race condition, link removed by another process
+    return count
+
+
+#
+# Remove all broken links in $PLASH_DATA/index
+#
+sys.stdout.write(&#34;unlinked_indexes: &#34;)
+sys.stdout.flush()
+index_dir = os.path.join(plash_data, &#34;index&#34;)
+count = remove_broken_links(index_dir)
+print(count)
+
+#
+# Remove all broken links in $PLASH_DATA/map
+#
+sys.stdout.write(&#34;unlinked_maps: &#34;)
+sys.stdout.flush()
+maps_dir = os.path.join(plash_data, &#34;map&#34;)
+count = remove_broken_links(maps_dir)
+print(count)
+
+#
+# remove unused fuse mount processes
+#
+sys.stdout.write(&#34;killed_fuses: &#34;)
+sys.stdout.flush()
+used_mountpoint = os.path.join(plash_data, &#34;mnt&#34;)
+mnt_ns_counter = Counter()
+running_unionfs = {}
+killed = 0
+for pid in os.listdir(&#34;/proc&#34;):
+    if not pid.isdigit():
+        continue
+
+    # read process mount namespace and command line arguments
+    try:
+        mntns = os.readlink(os.path.join(&#34;/proc&#34;, pid, &#34;ns&#34;, &#34;mnt&#34;))
+        cmdline_path = os.path.join(&#34;/proc&#34;, pid, &#34;cmdline&#34;)
+        with open(cmdline_path) as f:
+            cmd = f.read().split(&#34;\0&#34;)[:-1]
+    except OSError:
+        continue
+
+    # collect unionfs processes mounted at this plash data
+    if (
+        cmd
+        and os.path.basename(cmd[0]) in (&#34;unionfs&#34;, &#34;unionfs-fuse&#34;)
+        and (cmd[-1] == used_mountpoint)
+    ):
+        running_unionfs[pid] = mntns
+
+    mnt_ns_counter.update([mntns])
+for unionfs_pid, mntns in running_unionfs.items():
+    count = mnt_ns_counter[mntns]
+
+    # check if this unionfs_pid instance is the only one using
+    # it&#39;s mount namespace
+    if count == 1:
+        try:
+            os.kill(int(unionfs_pid), signal.SIGINT)
+            killed += 1
+        except OSError:
+            pass
+print(killed)
+
+#
+# Remove unused tmp dirs in $PLASH_DATA/tmp
+#
+sys.stdout.write(&#34;removed_tmpdirs: &#34;)
+sys.stdout.flush()
+deleted_tmps = 0
+tmp = os.path.join(plash_data, &#34;tmp&#34;)
+for file in os.listdir(tmp):
+    abs_file = os.path.join(tmp, file)
+
+    try:
+        _, sid, pid, *_ = file.split(&#34;_&#34;)
+        pid = int(pid)
+    except ValueError:
+        continue
+
+    try:
+        real_sid = os.getsid(pid)
+    except ProcessLookupError:
+        # no such pid, delete its tmp data
+        delete = True
+    else:
+        if str(sid) == str(real_sid):
+            # process still alive, don&#39;t delete its tmp dir
+            delete = False
+        else:
+            # sid mismatch, its another one, delete
+            delete = True
+
+    if delete:
+        shutil.rmtree(abs_file)
+        deleted_tmps += 1
+print(deleted_tmps)</pre>
+
+
+</body>
+</html>

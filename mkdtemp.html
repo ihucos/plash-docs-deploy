@@ -1,0 +1,207 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for mkdtemp</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash mkdtemp</pre>
+
+<h1>Description</h1>
+<pre>Create a temporary directory in the plash data.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">function has_tmpdir {
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  tmproot=&#34;$(plash data realpath tmp)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  [[ &#34;$(ls $tmproot)&#34; ]]
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}  
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">function has_not_tmpdir {
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  ! has_tmpdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}  
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>`plash clean` cleans tmpdir only if calling proccess died</h3>
+    
+  
+    
+      <pre style="display: inline;">has_not_tmpdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">sh -c &#34;plash mkdtemp&#34; # from a child process
+</pre>
+    
+  
+    
+      <pre style="display: inline;">has_tmpdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash clean
+</pre>
+    
+  
+    
+      <pre style="display: inline;">has_not_tmpdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash mkdtemp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">has_tmpdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash clean
+</pre>
+    
+  
+    
+      <pre style="display: inline;">has_tmpdir
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Created tmpdir is in plash_data</h3>
+    
+  
+    
+      <pre style="display: inline;">tmpdir=&#34;$(plash mkdtemp)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$tmpdir&#34; = &#34;$PLASH_DATA&#34;* ]]
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Created tmpdir is writable</h3>
+    
+  
+    
+      <pre style="display: inline;">tmpdir=&#34;$(plash mkdtemp)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">touch &#34;$tmpdir/file&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">mkdir &#34;$tmpdir/dir&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>#define _GNU_SOURCE
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+int main() {
+  char *tmpdir, *tmpdir_templ;
+  if (asprintf(&amp;tmpdir_templ, &#34;%s/tmp/plashtmp_%d_%d_XXXXXX&#34;, pl_call(&#34;data&#34;),
+               getsid(0), getppid()) == -1)
+    pl_fatal(&#34;asprintf&#34;);
+  tmpdir = mkdtemp(tmpdir_templ);
+  if (tmpdir == NULL)
+    pl_fatal(&#34;mkdtemp: %s&#34;, tmpdir_templ);
+  puts(tmpdir);
+}</pre>
+
+
+</body>
+</html>

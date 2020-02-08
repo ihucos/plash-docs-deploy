@@ -1,0 +1,178 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for import-tar</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash import-tar [ TARFILE ]</pre>
+
+<h1>Description</h1>
+<pre>Create a container from a tar file.
+If the TARFILE argument is ommited, the tar file is read from stdin.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -ex
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">tar=$(mktemp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash b export-tar -f 1 --run &#39;touch /myperson&#39; -- $tar
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Importing tar file succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">new=$(plash import-tar $tar)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash with-mount $new ls ./myperson
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Can import file from stdin</h3>
+    
+  
+    
+      <pre style="display: inline;">cat $tar | plash import-tar
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Importing invalid or missing file fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash import-tar /doesnotexistssssh_really_4423487)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">badtar=$(mktemp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">(! plash import-tar $badtar)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Importing invalid file from stdin fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! echo &#39;invalid&#39; | plash import-tar)
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>import os
+import sys
+import tarfile
+from os.path import join
+
+from plash import utils
+
+utils.assert_initialized()
+
+try:
+    tar_file = sys.argv[1]
+except IndexError:
+    tar_file = None
+
+
+class PlashTarFile(tarfile.TarFile):
+    def makedev(self, tarinfo, targetpath):
+        try:
+            tarfile.TarFile.makedev(self, tarinfo, targetpath)
+        except OSError as exc:
+            print(
+                &#34;plash: ignoring dev file: {} ({})&#34;.format(tarinfo.path, exc.strerror),
+                file=sys.stderr,
+            )
+
+
+rootfs = utils.plash_call(&#34;mkdtemp&#34;)
+
+with utils.catch_and_die([tarfile.TarError], debug_class=True):
+    with utils.catch_and_die([OSError]):
+        if tar_file is None:
+            t = PlashTarFile.open(fileobj=sys.stdin.buffer, mode=&#34;r|&#34;)
+        else:
+            t = PlashTarFile.open(tar_file)
+
+t.extractall(rootfs)
+
+# we want /etc/resolv to not be a symlink or to exist as a file - otherwise moutning over it later does not work
+resolvconf = join(rootfs, &#34;etc/resolv.conf&#34;)
+try:
+    os.unlink(resolvconf)
+except FileNotFoundError:
+    pass
+with open(resolvconf, &#34;w&#34;) as f:
+    f.seek(0)
+    f.truncate()
+
+utils.plash_exec(&#34;add-layer&#34;, &#34;0&#34;, rootfs)</pre>
+
+
+</body>
+</html>

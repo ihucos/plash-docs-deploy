@@ -1,0 +1,222 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for purge</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash purge [ --yes ]</pre>
+
+<h1>Description</h1>
+<pre>Deletes all build data unatomically. Running containers that rely on the
+build data will enter an undefined state. Plashs behaviour while this command
+did not finish running returning an non zero exit code is undefined.</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Check that purge works, confirm trough stdin</h3>
+    
+  
+    
+      <pre style="display: inline;">export PLASH_DATA=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash init; plash data touch config/testmode
+</pre>
+    
+  
+    
+      <pre style="display: inline;">echo &#39;yes&#39; | plash purge
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls -A $PLASH_DATA)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -n &#34;$out&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Purge two times</h3>
+    
+  
+    
+      <pre style="display: inline;">export PLASH_DATA=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash init; plash data touch config/testmode
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash purge --yes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash purge --yes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Call plash purge on empty plash data</h3>
+    
+  
+    
+      <pre style="display: inline;">export PLASH_DATA=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash purge --yes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Check that purge removes all data in the plash_data directory</h3>
+    
+  
+    
+      <pre style="display: inline;">export PLASH_DATA=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash init; plash data touch config/testmode
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls -A $PLASH_DATA)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -n &#34;$out&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash purge --yes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls -A $PLASH_DATA)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -z &#34;$out&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Not confirming does not delete the data</h3>
+    
+  
+    
+      <pre style="display: inline;">export PLASH_DATA=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash init; plash data touch config/testmode
+</pre>
+    
+  
+    
+      <pre style="display: inline;">echo &#39;no&#39; | plash purge
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(ls -A $PLASH_DATA)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -n &#34;$out&#34;
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>import os
+import sys
+from shutil import rmtree
+from plash import utils
+
+utils.unshare_user()
+
+plash_data = utils.plash_call(&#34;data&#34;)
+
+if sys.argv[1:2] == [&#34;--yes&#34;] or input(&#34;Delete all build data? [y/N] &#34;) == &#34;y&#34;:
+
+    #
+    # don&#39;t delete the dir itself because it could be a mount
+    #
+
+    try:
+        os.unlink(os.path.join(plash_data, &#34;id_counter&#34;))
+    except FileNotFoundError:
+        pass
+
+    for dir in os.listdir(plash_data):
+        rmtree(os.path.join(plash_data, dir))</pre>
+
+
+</body>
+</html>

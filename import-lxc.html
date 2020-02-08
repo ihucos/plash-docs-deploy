@@ -1,0 +1,170 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for import-lxc</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash import-lxc DISTRIBUTION:RELEASE [--dry]</pre>
+
+<h1>Description</h1>
+<pre>Import an image from https://images.linuxcontainers.org/
+if --dry is set, the image url is printed but not imported</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/sh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -xeu
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test_import_lxc () {
+</pre>
+    
+  
+    
+      <pre style="display: inline;">  plash import-lxc &#34;$1&#34; --dry | xargs curl --head --location --fail | grep &#34;Content-Type: application/x-tar&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># test the test
+</pre>
+    
+  
+    
+      <pre style="display: inline;">(! test_import_lxc badimagname )
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">cont=$(plash import-lxc alpine:edge)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash run $cont ls
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Dry import of unknown image fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash import-lxc unknownos --dry)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Dry import returns https url</h3>
+    
+  
+    
+      <pre style="display: inline;">plash import-lxc alpine:edge --dry | grep &#39;^https://&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Some images give a tar file</h3>
+    
+  
+    
+      <pre style="display: inline;">test_import_lxc alpine:edge
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test_import_lxc archlinux:current
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test_import_lxc debian:sid
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>set -e
+set -o pipefail
+
+HOME_URL=https://images.linuxcontainers.org
+INDEX_URL=https://images.linuxcontainers.org/meta/1.0/index-user
+ARCH=amd64
+
+if [ -z &#34;$1&#34; ]; then
+  echo &#34;usage: plash import-lxc DISTRIBUTION:RELEASE [--dry]&#34; &gt;&amp;2
+  exit 1
+fi
+
+if ! [[ &#34;$1&#34; = *&#39;:&#39;* ]]; then
+  echo &#34;plash error: also specify the release, example: deian:sid&#34; &gt;&amp;2
+  exit 1
+fi
+
+match=$(curl --progress-bar --fail --location $INDEX_URL |
+  awk -F&#34;;&#34; &#39;$3 == &#34;&#39;&#34;$ARCH&#34;&#39;&#34; &amp;&amp; $4 == &#34;default&#34; { print $1&#34;:&#34;$2&#34; &#34;$6 }&#39; |
+  awk -v a=&#34;$1&#34; &#39;a == $1 { print $2 }&#39;
+)
+
+if [ -z &#34;$match&#34; ]; then
+  echo &#34;plash error: \&#34;$1\&#34; not listed in $HOME_URL/&#34; &gt;&amp;2
+  exit 1
+fi
+
+rootfs=&#34;${HOME_URL}${match}&#34;rootfs.tar.xz
+
+if [[ &#34;$2&#34; = &#34;--dry&#34; ]]; then
+  echo &#34;$rootfs&#34;
+else
+  exec plash import-url &#34;$rootfs&#34; &#34;$rootfs&#34;.asc
+fi</pre>
+
+
+</body>
+</html>

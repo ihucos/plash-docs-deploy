@@ -1,0 +1,169 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for b</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash b PLASHCMD *BUILDARGS [-- *CMDARGS]</pre>
+
+<h1>Description</h1>
+<pre>Build then run utility. Builds the given build commands and calls the given
+plash command with the builded container.</pre>
+
+
+  <h1>Example</h1>
+  <pre>$ plash b run -A
+$ plash b run --eval-file ./plashfile -- ls</pre>
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>B builds flag arguments and passes it to command</h3>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$(plash b nodepath -f 1)&#34; = &#34;$(plash nodepath 1)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>No build build flags fail</h3>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$(plash b nodepath 1)&#34; = *&#34;no build arguments&#34;*]]
+</pre>
+    
+  
+    
+      <pre style="display: inline;">! plash b nodepath 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$(plash b nodepath 1 2 3 4)&#34; = *&#34;no build arguments&#34;*]]
+</pre>
+    
+  
+    
+      <pre style="display: inline;">! plash b nodepath 1 2 3 4
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>No arguments  fail</h3>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$(plash b nodepath)&#34; = &#34;usage: plash b&#34;*]]
+</pre>
+    
+  
+    
+      <pre style="display: inline;">! plash b nodepath
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Build arguments can be in the beginning or end</h3>
+    
+  
+    
+      <pre style="display: inline;">plash b with-mount true -A
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash b with-mount -A -- true
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>
+import sys
+import os
+
+from plash import utils
+
+
+def split_args(args):
+    positional = []
+    filtered_args = []
+    found_first_opt = False
+    while args:
+        arg = args.pop(0)
+        if not arg.startswith(&#34;-&#34;) and not found_first_opt:
+            positional.append(arg)
+        elif arg == &#34;--&#34;:
+            positional += args
+            args = None
+        else:
+            filtered_args.append(arg)
+            found_first_opt = True
+    return positional, filtered_args
+
+
+try:
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+except IndexError:
+    utils.die_with_usage()
+if not args:
+    utils.die_with_usage()
+
+cmdargs, buildargs = split_args(args)
+if not buildargs:
+    utils.die(&#34;b: no build arguments&#34;)
+
+container_id = utils.plash_call(&#34;build&#34;, *buildargs)
+
+with utils.catch_and_die([FileNotFoundError], debug=cmd):
+    utils.plash_exec(cmd, container_id, *cmdargs)</pre>
+
+
+</body>
+</html>

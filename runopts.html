@@ -1,0 +1,685 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for runopts</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash runopts -c CONTAINER [*OPTS] [CMD1 [ CMD2 ... ]]</pre>
+
+<h1>Description</h1>
+<pre>Run a container specifying lower level options.  Usually you&#39;ll want to use
+`plash run` instead. If no command is specified the containers default root
+shell will be executed as login shell.
+
+Supported options:
+
+-c CONTAINER
+       The container id to run
+
+-d CHANGESIDR
+       If specified changes to the root file system will be written there
+
+-m MOUNT
+       Mount a path to the same location inside the container, can be
+       specified multiple times
+
+-e ENV
+       Whitelist environment variable for import into container
+
+-E ENV
+       Whitelist all environment variables specified in given environment
+       variable. Separator is &#39;:&#39;
+
+-i
+       Start with empty environment. -e and -E implies -i</pre>
+
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -eux
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Executing program does not fail</h3>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Writing file fails if no changedir is specified</h3>
+    
+  
+    
+      <pre style="display: inline;">! plash runopts -c 1 touch /da
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Writing file succeeds if changedir is specified</h3>
+    
+  
+    
+      <pre style="display: inline;">tmpdir=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 -d &#34;$tmpdir&#34; touch /da true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># mount handling
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Does not fail if specified mountpoint does not exists</h3>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 -m /doesnotexist -- true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Mounted file looks the same in host and container</h3>
+    
+  
+    
+      <pre style="display: inline;">tmp=$(mktemp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">changesdir=$(mktemp -d)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 -d $changesdir -m /etc/passwd cat /etc/passwd &gt; $tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">cat $tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">cmp /etc/passwd $tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>No mount namespace pollutions</h3>
+    
+  
+    
+      <pre style="display: inline;">new=$(plash create 1 ls)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">before=$(cat /proc/mounts | grep &#34;/index/$new&#34; | wc -l)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c $new ls
+</pre>
+    
+  
+    
+      <pre style="display: inline;">after=$(cat /proc/mounts | grep &#34;index/$new&#34; | wc -l)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test $before = $after
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># environemnt handling
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <h3>By default all envs exported</h3>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$(env | cut -d= -f1)&#34; = &#34;$(plash runopts -c 1 env | cut -d= -f1)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>No envs exported if -i specified</h3>
+    
+  
+    
+      <pre style="display: inline;">out=&#34;$(plash runopts -i -c 1 printenv)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;&#34; = &#34;$out&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Only export whitelisted envs</h3>
+    
+  
+    
+      <pre style="display: inline;">test &#34;A=1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">B=2&#34; = &#34;$(A=1 B=2 plash runopts -e A -e B -c 1 printenv)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Only export whitelisted envs by another env</h3>
+    
+  
+    
+      <pre style="display: inline;">test &#34;A=a&#34; = &#34;$(EXPORT=A A=a plash runopts -c 1 -E EXPORT printenv)&#34;
+</pre>
+    
+  
+    
+      <h3>Only export multiple whitelisted envs by another env</h3>
+    
+  
+    
+      <pre style="display: inline;">test &#34;A=a
+</pre>
+    
+  
+    
+      <pre style="display: inline;">B=b&#34; = &#34;$(EXPORT=A:B A=a B=b plash runopts -c 1 -E EXPORT printenv)&#34;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Not existing env to export does succeed</h3>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 -e daENV true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Not existing env to export envs succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 -E DAENV true
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># Exit codes
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Exit status is returned back</h3>
+    
+  
+    
+      <pre style="display: inline;">set +e
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash runopts -c 1 -- sh -c &#39;exit 123&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">exit=$?
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -e
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test $exit = 123
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Exit with 127 when the command is not found</h3>
+    
+  
+    
+      <pre style="display: inline;">set +e
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash runopts -c 1 mycmdnotfound 2&gt;&amp;1)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">exit=$?
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -e
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$exit&#34; = 127
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <pre style="display: inline;"># Misc
+</pre>
+    
+  
+    
+      <pre style="display: inline;">#
+</pre>
+    
+  
+    
+      <h3>Error message is issued if the specified mount seems relative</h3>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash runopts -c 1 -m relativepath 2&gt;&amp;1; true)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$out&#34; = *&#34;mount path must be absolute&#34;* ]]
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Current directory is mapped to container</h3>
+    
+  
+    
+      <pre style="display: inline;">cd /tmp
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash runopts -c 1 pwd)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = $(pwd)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">cd -
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Can run a layered container</h3>
+    
+  
+    
+      <pre style="display: inline;">new=$(plash create 1 true)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash runopts -c $new echo hi)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = hi
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Shell is sarted if not command specified</h3>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$(echo &#39;echo iamshell&#39; | plash runopts -c 1)&#34; = iamshell
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Specific error message is printed if no command specified</h3>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$(plash runopts -c 1 notexist 2&gt;&amp;1 1&gt;/dev/null)&#34; = *&#34;notexist: command not found&#34;* ]] 
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Command that looks like an environment variable is executed nevertheless</h3>
+    
+  
+    
+      <pre style="display: inline;">[[ &#34;$(plash runopts -c 1 VAR=1 2&gt;&amp;1 1&gt;/dev/null)&#34; = *&#34;VAR=1: command not found&#34;* ]] 
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>#define _GNU_SOURCE
+#include &lt;assert.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;pwd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/mount.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+#define OPTSTRING &#34;c:d:m:e:E:i&#34;
+
+char *get_default_root_shell() {
+  struct passwd *pwd = getpwuid(0);
+  if (pwd == NULL) {
+    return &#34;/bin/sh&#34;;
+  } else {
+    return pwd-&gt;pw_shell;
+  }
+}
+
+int main(int argc, char *argv[]) {
+
+  char *plash_data = pl_call(&#34;data&#34;);
+
+  // don&#39;t let getopt print error messages
+  opterr = 0;
+
+  //
+  // save and validate the user arguments
+  //
+  int opt;
+  char *changesdir = NULL;
+  char *container = NULL;
+  int manage_envs = 0;
+  while ((opt = getopt(argc, argv, OPTSTRING)) != -1) {
+    switch (opt) {
+    case &#39;c&#39;:
+      container = optarg;
+      break;
+    case &#39;d&#39;:
+      changesdir = optarg;
+      break;
+    case &#39;m&#39;:
+      if (!(optarg[0] == &#39;/&#39;))
+        pl_fatal(&#34;mount path must be absolute&#34;);
+    case &#39;i&#39;:
+    case &#39;e&#39;:
+    case &#39;E&#39;:
+      manage_envs = 1;
+      break;
+    case &#39;:&#39;:
+      pl_usage();
+      break;
+    case &#39;?&#39;:
+      pl_usage();
+    }
+  }
+  if (container == NULL)
+    pl_usage();
+
+  //
+  // get &#34;userspace root&#34;
+  //
+  pl_unshare_user();
+  pl_unshare_mount();
+
+  char *origpwd = get_current_dir_name();
+
+  //
+  // prepare an empty mountpoint
+  //
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (mount(&#34;tmpfs&#34;, &#34;mnt&#34;, &#34;tmpfs&#34;, MS_MGC_VAL, NULL) == -1)
+    pl_fatal(&#34;mount&#34;);
+
+  //
+  // mount root filesystem at the empty mountpoint
+  //
+  pl_call(&#34;mount&#34;, container, &#34;mnt&#34;,
+          changesdir); // changesdir is ignored if it is NULL
+
+  //
+  // mount requested mounts
+  //
+  if (chdir(&#34;mnt&#34;) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  optind = 1; // reset the getopt
+  while ((opt = getopt(argc, argv, OPTSTRING)) != -1) {
+    switch (opt) {
+    case &#39;m&#39;:
+      pl_bind_mount(optarg, optarg + 1);
+      break;
+    case &#39;e&#39;:
+      pl_whitelist_env(optarg);
+      break;
+    case &#39;E&#39;:
+      pl_whitelist_envs_from_env(optarg);
+      break;
+    }
+  }
+
+  if (manage_envs)
+    pl_whitelist_env(NULL);
+
+  //
+  // chroot, then reconstruct working directory
+  //
+  chroot(&#34;.&#34;) != -1 || pl_fatal(&#34;chroot&#34;);
+  pl_chdir(origpwd);
+
+  //
+  // build up the arguments to run
+  //
+  char **run_args = argv + optind;
+  if (*run_args == NULL) {
+    run_args = (char *[]){get_default_root_shell(), &#34;-l&#34;, NULL};
+  } else {
+    run_args = argv + optind;
+  }
+
+  //
+  // exec!
+  //
+  execvp(*run_args, run_args);
+  if (errno == ENOENT) {
+    fprintf(stderr, &#34;%s: command not found\n&#34;, *run_args);
+    return 127;
+  }
+  pl_fatal(&#34;exec&#34;);
+}</pre>
+
+
+</body>
+</html>

@@ -1,0 +1,296 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for build</title>
+</head>
+<body>
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+<h1>Usage</h1>
+<pre>plash build --macro1 ar1 arg2 --macro2 arg1 ...</pre>
+
+<h1>Description</h1>
+<pre>Builds a container. Any command line options is evaluated as macro with
+`plash eval`. Use `plash help-macros` to list all available macros.</pre>
+
+
+  <h1>Example</h1>
+  <pre>$ plash build -f ubuntu --run &#39;touch a&#39;
+--&gt; touch a
+--:
+66
+
+$ plash build -f ubuntu --run &#39;touch a&#39; --layer --run &#39;touch b&#39;
+--&gt; touch b
+--:
+67
+
+$ plash build -f ubuntu --apt nmap
+--&gt; apt-get update
+Hit:1 http://security.ubuntu.com/ubuntu bionic-security InRelease
+Get:2 http://archive.ubuntu.com/ubuntu bionic InRelease [235 kB]
+&lt;snip&gt;
+Setting up nmap (7.60-1ubuntu2) ...
+Processing triggers for libc-bin (2.26-0ubuntu2) ...
+--:
+68</pre>
+
+
+
+  <h1>Tested behaviour</h1>
+  <h3>Preface</h3>
+  
+    
+      <pre style="display: inline;">#!/bin/bash
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -xeu
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <pre style="display: inline;">fresh(){
+</pre>
+    
+  
+    
+      <pre style="display: inline;">    plash build -f 1 --invalidate-layer
+</pre>
+    
+  
+    
+      <pre style="display: inline;">}
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Building container succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">fresh
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Building container with multiple layers succeeds</h3>
+    
+  
+    
+      <pre style="display: inline;">plash build -f 1 -l --invalidate-layer -l --invalidate-layer -l --invalidate-layer -l --invalidate-layer
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Changes in builded container persists</h3>
+    
+  
+    
+      <pre style="display: inline;">cont=$(fresh)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">newcont=$(plash build -f $cont -x &#39;touch /hellow&#39;)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash run $newcont stat /hellow
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Recurring builds are cached</h3>
+    
+  
+    
+      <pre style="display: inline;">cont=$(fresh)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">stderr=$(mktemp)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash build -f $cont -x &#39;touch /a&#39; 2&gt; $stderr
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test -s $stderr # its not empty
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash build -f $cont -x &#39;touch /a&#39; 2&gt; $stderr
+</pre>
+    
+  
+    
+      <pre style="display: inline;">(! test -s $stderr) # its empty
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Any bad exit status when building returns exit code 1</h3>
+    
+  
+    
+      <pre style="display: inline;">cont=$(fresh)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set +e
+</pre>
+    
+  
+    
+      <pre style="display: inline;">plash build -f $cont -x &#39;exit 42&#39;
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test 1 -eq $? || exit 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">set -e
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Nonexistent base container fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash build -f 999)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Only providing the container returns that container</h3>
+    
+  
+    
+      <pre style="display: inline;">out=$(plash build -f 1)
+</pre>
+    
+  
+    
+      <pre style="display: inline;">test &#34;$out&#34; = 1
+</pre>
+    
+  
+    
+      <pre style="display: inline;">
+</pre>
+    
+  
+    
+      <h3>Bad build option fails</h3>
+    
+  
+    
+      <pre style="display: inline;">(! plash build --my-bad-opiton)
+</pre>
+    
+  
+
+
+<h1>Source Code</h1>
+<pre>import os
+import re
+import sys
+
+from plash.eval import get_hint_values, hint, remove_hint_values
+from plash import utils
+
+utils.assert_initialized()
+
+script = utils.plash_call(&#34;eval&#34;, *sys.argv[1:], strip=False)
+
+hints = dict(get_hint_values(script))
+image_hint = hints.get(&#34;image&#34;)
+if not image_hint:
+    utils.die(&#34;no image specified&#34;)
+
+# split the script in its layers
+layers = script.split(hint(&#34;layer&#34;) + &#34;\n&#34;)
+layers = [remove_hint_values(l) for l in layers]
+layers = [l for l in layers if l]
+
+utils.plash_call(&#34;nodepath&#34;, image_hint)
+current_container = image_hint
+os.environ[&#34;PS4&#34;] = &#34;--&gt; &#34;
+for layer in layers:
+    cache_key = utils.hashstr(b&#34;:&#34;.join([current_container.encode(), layer.encode()]))
+    next_container = utils.plash_call(&#34;map&#34;, cache_key)
+    if not next_container:
+
+        shell = (
+            # for some reason in ubuntu the path is not exported
+            # in a way this is a hack and should be fixed in ubuntu
+            &#34;export PATH\n&#34;
+            &#34;set -ex\n&#34; + layer
+        )
+        next_container = utils.plash_call(&#34;create&#34;,
+            current_container, &#34;/bin/sh&#34;, &#34;-l&#34;, input=shell
+        )
+        utils.plash_call(&#34;map&#34;, cache_key, next_container)
+        print(&#34;--:&#34;, file=sys.stderr)
+    current_container = next_container
+build_container = current_container
+
+print(current_container)</pre>
+
+
+</body>
+</html>
