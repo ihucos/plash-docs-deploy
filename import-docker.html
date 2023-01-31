@@ -1,0 +1,85 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for import-docker</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> import-docker</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash import-docker IMAGE</pre>
+
+<h2>Description</h2>
+<pre>Import image from local docker instance into.
+</pre>
+
+
+
+
+
+<h2>Source Code</h2>
+<pre><code>
+#include &lt;stddef.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+#define USAGE &#34;usage: plash import-docker IMAGE\n&#34;
+
+void call_docker_pull(char *image) {
+  int exit;
+  pid_t pid = fork();
+  if (pid == 0) {
+
+    // redirect stdout to stderr
+    if (dup2(STDERR_FILENO, STDOUT_FILENO) == -1)
+      pl_fatal(&#34;dup2&#34;);
+
+    execlp(&#34;docker&#34;, &#34;docker&#34;, &#34;pull&#34;, image, NULL);
+    pl_fatal(&#34;execlp&#34;);
+  }
+
+  if ((exit = pl_wait(pid))) {
+    pl_fatal(&#34;docker pull failed with exit status %d&#34;, exit);
+  }
+}
+
+int import_docker_main(int argc, char *argv[]) {
+  if (argc &lt; 2) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+  char *image = argv[1];
+  call_docker_pull(image);
+  char *container_id = pl_firstline(
+      pl_check_output((char *[]){&#34;docker&#34;, &#34;create&#34;, image, &#34;sh&#34;, NULL}));
+  pl_pipe((char *[]){&#34;docker&#34;, &#34;export&#34;, container_id, NULL},
+          (char *[]){&#34;/proc/self/exe&#34;, &#34;import-tar&#34;, NULL});
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for clean</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> clean</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash clean</pre>
+
+<h2>Description</h2>
+<pre>Cleans up plashs internal data.
+- Removes all broken links in $PLASH_DATA/index
+- Removes all broken links in $PLASH_DATA/map
+- Removes unused temporary directories in $PLASH_DATA/tmp
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -exu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash"># build container 2 and 3
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash build -f 1 --invalidate-layer
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• A simple invocation succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash clean
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• $PLASH_DATA/index is cleaned up
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out_before=$(ls &#34;$PLASH_DATA&#34;/index)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash rm 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash clean
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out_after=$(ls &#34;$PLASH_DATA&#34;/index)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out_before&#34; != &#34;$out_after&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• $PLASH_DATA/map is cleaned up
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash build -f 1 --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map key1 &#34;$cont&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map key2 &#34;$cont&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map key3 &#34;$cont&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls &#34;$PLASH_DATA&#34;/map)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#34;$out&#34; | grep key1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#34;$out&#34; | grep key2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#34;$out&#34; | grep key3
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash rm 3  # delete the container the maps are referencing to
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash clean --clean-cache-keys
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls &#34;$PLASH_DATA&#34;/map/)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = &#34;&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• $PLASH_DATA/tmp is cleaned up
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls &#34;$PLASH_DATA&#34;/tmp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = &#34;&#34; # assert empty tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash b run -f 1 -- true
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls &#34;$PLASH_DATA&#34;/tmp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#34;$out&#34; | grep plashtmp # assert output contains plashtmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash clean --clean-tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls &#34;$PLASH_DATA&#34;/tmp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = &#34;&#34; # assert empty tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Unexpected files n $PLASH_DATA do not lead to crash
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">touch &#34;$PLASH_DATA&#34;/index/mybadfile
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">touch &#34;$PLASH_DATA&#34;/map/mybadfile
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">touch &#34;$PLASH_DATA&#34;/tmp/mybadfile
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mkdir &#34;$PLASH_DATA&#34;/tmp/mybaddir
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash clean
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash clean\n&#34;
+
+#include &lt;dirent.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+size_t remove_broken_links_here() {
+  size_t removed = 0;
+  DIR *dir = opendir(&#34;.&#34;);
+  if (dir == NULL)
+    pl_fatal(&#34;opendir&#34;);
+  struct dirent *entry;
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry-&gt;d_type == DT_LNK) {
+      if (access(entry-&gt;d_name, F_OK) == -1) {
+        if (unlink(entry-&gt;d_name) != -1)
+          removed++;
+      }
+    }
+  }
+  closedir(dir);
+  return removed;
+}
+
+int is_process_still_running(pid_t pid, pid_t sid) {
+  if (getsid(pid) != sid) {
+    return EXIT_SUCCESS;
+  }
+  if (kill(pid, 0) == 0)
+    return EXIT_FAILURE;
+  return EXIT_SUCCESS;
+}
+
+size_t delete_unused_tmpdirs_here() {
+  size_t count = 0;
+  char *dirname_copy, *pid, *sid;
+
+  DIR *dir = opendir(&#34;.&#34;);
+  if (dir == NULL)
+    pl_fatal(&#34;opendir&#34;);
+  struct dirent *entry;
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry-&gt;d_type == DT_DIR) {
+
+      // parse sid and pid from the dir name
+      if ((dirname_copy = strdup(entry-&gt;d_name)) == NULL)
+        pl_fatal(&#34;strdup&#34;);
+      strtok(dirname_copy, &#34;_&#34;);
+      if ((pid = strtok(NULL, &#34;_&#34;)) == NULL)
+        continue;
+      if ((sid = strtok(NULL, &#34;_&#34;)) == NULL)
+        continue;
+
+      // delete temporary directory if the process that created it already died.
+      if (!is_process_still_running(atoll(pid), atoll(sid))) {
+        pl_run(&#34;rm&#34;, &#34;-rf&#34;, entry-&gt;d_name);
+        count++;
+      }
+
+      free(dirname_copy);
+    }
+  }
+  closedir(dir);
+  return count;
+}
+
+int clean_main(int argc, char *argv[]) {
+  size_t count;
+  pl_unshare_user();
+  char *pid, *sid;
+  char *plash_data = pl_call(&#34;data&#34;);
+
+  fprintf(stderr, &#34;output_stable: false\n&#34;);
+
+  // cd index
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (chdir(&#34;index&#34;) == -1)
+    pl_fatal(&#34;chdir&#34;);
+
+  // remove broken indexes
+  fprintf(stderr, &#34;unlinked_indexes: &#34;);
+  count = remove_broken_links_here();
+  fprintf(stderr, &#34;%ld\n&#34;, count);
+
+  // cd map
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (chdir(&#34;map&#34;) == -1)
+    pl_fatal(&#34;chdir&#34;);
+
+  // remove broken maps
+  fprintf(stderr, &#34;unlinked_maps: &#34;);
+  count = remove_broken_links_here();
+  fprintf(stderr, &#34;%ld\n&#34;, count);
+
+  // cd tmp
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (chdir(&#34;tmp&#34;) == -1)
+    pl_fatal(&#34;chdir&#34;);
+
+  // remove unused tmp dirs
+  fprintf(stderr, &#34;removed_tmpdirs: &#34;);
+  count = delete_unused_tmpdirs_here();
+  fprintf(stderr, &#34;%ld\n&#34;, count);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

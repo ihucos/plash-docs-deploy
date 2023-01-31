@@ -1,0 +1,525 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for shrink</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> shrink</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash shrink</pre>
+
+<h2>Description</h2>
+<pre>Delete half of the older containers.
+Containers with a lower build id will be deleted first.
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -eux
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink(){
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  plash shrink
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  plash clean --clean-index
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  out=$(ls $PLASH_DATA/index | xargs)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  test &#34;$out&#34; = &#34;$(echo $@)&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  plash purge --yes
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">}
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode(){
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  tmp=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  plash add-layer &#34;$1&#34; &#34;$tmp&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">}
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash"># start from zero
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash purge --yes
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• if called with one node delete it,
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• if called with no nodes, stay with no nodes
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• two simple nodes
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• create 2 containers with same parent
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• create 3 containers with same parent
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0 1 4
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• create some containers, where each has one child - except the leave
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 3
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0 1 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• create an older and a newer tree, ensure the older one gets deleted
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tree_a=$(mknode 0)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_a1=$(mknode &#34;$tree_a&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_a2=$(mknode &#34;$tree_a&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tree_b=$(mknode 0)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_b1=$(mknode &#34;$tree_b&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_b2=$(mknode &#34;$tree_b&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0 $tree_b $child_b1 $child_b2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• same as above but with an extra node in the second tree, this makes an extra node being deleted
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tree_a=$(mknode 0)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_a1=$(mknode &#34;$tree_a&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_a2=$(mknode &#34;$tree_a&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tree_b=$(mknode 0)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_b1=$(mknode &#34;$tree_b&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_b2=$(mknode &#34;$tree_b&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">child_b3=$(mknode &#34;$tree_b&#34;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0 $tree_b $child_b2 $child_b3
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• test with deferenced node
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mknode 0
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash rm 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">testshrink 0
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash shrink\n&#34;
+
+#include &lt;dirent.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+#define ITERDIR_BEGIN(path)                                                    \
+  DIR *dirp;                                                                   \
+  struct dirent *dir;                                                          \
+  dirp = opendir(path);                                                        \
+  if (dirp == NULL)                                                            \
+    pl_fatal(&#34;opendir&#34;);                                                       \
+  while ((dir = readdir(dirp)) != NULL) {
+
+#define ITERDIR_CLOSE()                                                        \
+  }                                                                            \
+  closedir(dirp);
+
+int is_leave(char *nodepath) {
+  int is_leave = 1;
+  ITERDIR_BEGIN(nodepath)
+  if (atoi(dir-&gt;d_name)) {
+    is_leave = 0;
+    break;
+  }
+  ITERDIR_CLOSE();
+  return is_leave;
+}
+
+int count_images() {
+  int count = 0;
+  ITERDIR_BEGIN(&#34;.&#34;)
+  if (dir-&gt;d_type == DT_LNK) {
+    char *nodepath = realpath(dir-&gt;d_name, NULL);
+    if (nodepath == NULL &amp;&amp; errno == ENOENT)
+      continue;
+    if (nodepath == NULL)
+      pl_fatal(&#34;realpath&#34;);
+    count++;
+  }
+  ITERDIR_CLOSE()
+  return count;
+}
+
+char *get_oldest_leave() {
+  char *oldest_leave = NULL;
+  char *oldest_leave_dup;
+  char *nodepath;
+  ITERDIR_BEGIN(&#34;.&#34;)
+  if ((dir-&gt;d_type != DT_LNK) ||                          // its&#39; not a link
+      ((nodepath = realpath(dir-&gt;d_name, NULL)) == NULL)) // or a broken link
+    continue;
+  if (is_leave(nodepath) &amp;&amp;
+      (oldest_leave == NULL ||                 // this is the first item or
+       atoi(oldest_leave) &gt; atoi(dir-&gt;d_name)) // this item is even smaller
+  )
+    oldest_leave = dir-&gt;d_name;
+  ITERDIR_CLOSE()
+  oldest_leave_dup = strdup(oldest_leave);
+  if (oldest_leave_dup == NULL)
+    pl_fatal(&#34;dup&#34;);
+  return oldest_leave_dup;
+}
+
+int shrink_main(int argc, char *argv[]) {
+  char *image_id;
+  char *plash_data = pl_call(&#34;data&#34;);
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir %s&#34;);
+  if (chdir(&#34;index&#34;) == -1)
+    pl_fatal(&#34;chdir %s&#34;);
+
+  int images_count = count_images() - 1; // substract special root image
+  if (!images_count) {
+    printf(&#34;You have no images\n&#34;);
+    return EXIT_SUCCESS;
+  }
+  printf(&#34;You have %d images.\n&#34;, images_count);
+  for (int to_delete = ((images_count + 1) / 2); to_delete; to_delete--) {
+    char *o = get_oldest_leave();
+    if (o[0] == &#39;0&#39; &amp;&amp; o[1] == &#39;\0&#39;) {
+      printf(&#34;Nothing to delete.\n&#34;);
+      break;
+    }
+    printf(&#34;Deleting image id: %s\n&#34;, o);
+    pl_call(&#34;rm&#34;, o);
+  }
+  printf(&#34;You have %d images.\n&#34;, count_images() - 1);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

@@ -1,0 +1,72 @@
+
+body {
+  font-family: monospace;
+  max-width: 800px;
+  margin: 64px auto;
+  background-image: url(bg3.png);
+  background-repeat: repeat;
+  opacity: 0.9;
+}
+
+section {
+  background-color: white;
+  padding: 5em;
+  padding-top: 0;
+  margin: 1em;
+  border-radius: 8px;
+}
+
+
+h1 {
+  font-family: monospace;
+  font-size: 3rem;
+  margin-bottom: 0.5em;
+  margin-top: 0.5em;
+  text-align: center;
+  color: #B96C19;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5em;
+
+}
+
+h3 {
+  font-size: 1.2em;
+  margin-bottom: 1em;
+  margin-top: 1em;
+  font-family: Times, 'Times New Roman', serif;
+  color: #2F5485;
+}
+
+
+h2 {
+  font-size: 3.5rem;
+  margin-top: 64px;
+  margin-bottom:24px;
+  font-weight: bold;
+  position: relative;
+  z-index: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform: scale(1, 1.5);
+  -webkit-transform: scale(1, 1.5);
+  -moz-transform: scale(1, 1.5);
+  -o-transform: scale(1, 1.5);
+  -ms-transform: scale(1, 1.5);
+  font-family: Times, 'Times New Roman', serif;
+  font-weight: normal;
+  color: #2F5485;
+  text-shadow: 0.03em 0.03em 0px #B3B3B3;
+}
+
+
+pre {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+code {
+  padding: 0 !important;
+}

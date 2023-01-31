@@ -1,0 +1,143 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for runb</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> runb</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash runb IMAGE_ID CHANGESDIR CMD1 [ CMD2 ... ] ]</pre>
+
+<h2>Description</h2>
+<pre>Run an image in the build environment. Filesystem changes are saved to
+CHANGESDIR. This program might be merged together with `plash create` in the
+future.
+
+The following host file systems are mapped to the container:
+- /etc/resolv.conf
+- /sys
+- /dev
+- /proc
+- /home
+- /root
+</pre>
+
+
+
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash runb IMAGE_ID CHANGESDIR CMD1 [ CMD2 ... ] ]\n&#34;
+
+#define _GNU_SOURCE
+#include &lt;assert.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;pwd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/mount.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+int runb_main(int argc, char *argv[]) {
+
+  if (argc &lt; 4) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+  char *container_id = argv[1];
+  char *changesdir = argv[2];
+  char *origpwd = get_current_dir_name();
+  char *plash_data = pl_call(&#34;data&#34;);
+  //
+  // get &#34;userspace root&#34;
+  //
+  pl_unshare_user();
+  pl_unshare_mount();
+
+  //
+  // prepare an empty mountpoint
+  //
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (mount(&#34;tmpfs&#34;, &#34;mnt&#34;, &#34;tmpfs&#34;, MS_MGC_VAL, NULL) == -1)
+    pl_fatal(&#34;mount&#34;);
+
+  //
+  // mount root filesystem at the empty mountpoint
+  //
+  pl_call(&#34;mount&#34;, container_id, &#34;mnt&#34;, changesdir);
+
+  //
+  // mount
+  //
+  if (chdir(&#34;mnt&#34;) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  pl_bind_mount(&#34;/sys&#34;, &#34;sys&#34;);
+  pl_bind_mount(&#34;/dev&#34;, &#34;dev&#34;);
+  pl_bind_mount(&#34;/proc&#34;, &#34;proc&#34;);
+  pl_bind_mount(&#34;/home&#34;, &#34;home&#34;);
+  pl_bind_mount(&#34;/root&#34;, &#34;root&#34;);
+
+  // ensure /etc/resolv.conf is a normal file. Because if it where a symlink,
+  // mounting over it would not work as expected
+  unlink(&#34;etc/resolv.conf&#34;);
+  int fd;
+  if ((fd = open(&#34;etc/resolv.conf&#34;, O_CREAT | O_WRONLY, 0775)) &lt; 0)
+    pl_fatal(&#34;open&#34;);
+  close(fd);
+  pl_bind_mount(&#34;/etc/resolv.conf&#34;, &#34;etc/resolv.conf&#34;);
+
+  //
+  // Import envs
+  //
+  pl_whitelist_env(&#34;TERM&#34;);
+  pl_whitelist_env(&#34;HOME&#34;);
+  pl_whitelist_env(&#34;DISPLAY&#34;);
+  pl_whitelist_env(&#34;PLASH_DATA&#34;);
+  pl_whitelist_env(NULL);
+
+  //
+  // chroot, then reconstruct working directory
+  //
+  chroot(&#34;.&#34;) != -1 || pl_fatal(&#34;chroot&#34;);
+  pl_chdir(origpwd);
+
+  //
+  // exec!
+  //
+  char **run_args = argv + 3;
+  execvp(*run_args, run_args);
+  pl_fatal(&#34;execvp&#34;);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

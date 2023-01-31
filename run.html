@@ -1,0 +1,305 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for run</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> run</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash run IMAGE_ID [ CMD1 [ CMD2 ... ] ]</pre>
+
+<h2>Description</h2>
+<pre>Run a container. If no command is specified, the containers default root
+shell is executed.
+
+The following host file systems are mapped to the container:
+- /tmp
+- /home
+- /root
+- /etc/resolv.conf
+- /sys
+- /dev
+- /proc
+- /host (contains entire host filesystem)
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -xeu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• run a program and capture stdout
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(plash run 1 echo hellow)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = hellow
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• container is writeable
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash run 1 touch /a
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• can be used with the `b` command
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash b run -f 1 --invalidate-layer -- ls
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• no command arguments spawn a shell
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$(echo &#39;echo iamshell&#39; | plash run 1)&#34; = iamshell
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash run IMAGE_ID [ CMD1 [ CMD2 ... ] ]\n&#34;
+
+#define _GNU_SOURCE
+#include &lt;assert.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;pwd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/mount.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+void read_envs_from_plashenv() {
+  char *line = NULL;
+  char *lineCopy = NULL;
+  size_t len = 0;
+  FILE *fp = fopen(&#34;.plashenvs&#34;, &#34;r&#34;);
+  if (fp == NULL)
+    return;
+  while ((getline(&amp;line, &amp;len, fp)) != -1) {
+    line[strcspn(line, &#34;\n&#34;)] = 0; // chop newline char
+    lineCopy = strdup(line);
+    if (!lineCopy) {
+      pl_fatal(&#34;strdup&#34;);
+    }
+    pl_whitelist_env(lineCopy);
+  }
+  fclose(fp);
+}
+
+void read_envs_from_plashenvprefix() {
+  char *line = NULL;
+  char *lineCopy = NULL;
+  size_t len = 0;
+  FILE *fp = fopen(&#34;.plashenvsprefix&#34;, &#34;r&#34;);
+  if (fp == NULL)
+    return;
+  while ((getline(&amp;line, &amp;len, fp)) != -1) {
+    line[strcspn(line, &#34;\n&#34;)] = 0; // chop newline char
+    lineCopy = strdup(line);
+    if (!lineCopy) {
+      pl_fatal(&#34;strdup&#34;);
+    }
+    pl_whitelist_env_prefix(lineCopy);
+  }
+  fclose(fp);
+}
+
+void read_mounts_from_plashmounts() {
+  char *line = NULL;
+  char *lineCopy = NULL;
+  size_t len = 0;
+  char *mount;
+  FILE *fp = fopen(&#34;.plashmounts&#34;, &#34;r&#34;);
+  if (fp == NULL)
+    return;
+  while ((getline(&amp;line, &amp;len, fp)) != -1) {
+    line[strcspn(line, &#34;\n&#34;)] = 0; // chop newline char
+    lineCopy = strdup(line);
+    if (!lineCopy) {
+      pl_fatal(&#34;strdup&#34;);
+    }
+    mount = strsep(&amp;lineCopy, &#34;:&#34;);
+    errno = 0;
+    if (mount[0] != &#39;/&#39;)
+      pl_fatal(&#34;src mount in /.plashmounts must start with a slash&#34;);
+    if (lineCopy == NULL) {
+      pl_bind_mount(mount, mount + 1);
+    } else {
+      pl_bind_mount(mount, lineCopy + 1);
+      errno = 0;
+      if (lineCopy[0] != &#39;/&#39;)
+        pl_fatal(&#34;dst mount in /.plashmounts must start with a slash&#34;);
+    }
+  }
+  fclose(fp);
+}
+
+int run_main(int argc, char *argv[]) {
+
+  if (argc &lt; 2) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+  char *container_id = argv[1];
+  char *origpwd = get_current_dir_name();
+  char *plash_data = pl_call(&#34;data&#34;);
+  char *changesdir = pl_call(&#34;mkdtemp&#34;);
+
+  //
+  // get &#34;userspace root&#34;
+  //
+  pl_unshare_user();
+  pl_unshare_mount();
+
+  //
+  // prepare an empty mountpoint
+  //
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (mount(&#34;tmpfs&#34;, &#34;mnt&#34;, &#34;tmpfs&#34;, MS_MGC_VAL, NULL) == -1)
+    pl_fatal(&#34;mount&#34;);
+
+  //
+  // mount root filesystem at the empty mountpoint
+  //
+  pl_call(&#34;mount&#34;, container_id, &#34;mnt&#34;, changesdir);
+
+  //
+  // mount
+  //
+  if (chdir(&#34;mnt&#34;) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  pl_bind_mount(&#34;/tmp&#34;, &#34;tmp&#34;);
+  pl_bind_mount(&#34;/home&#34;, &#34;home&#34;);
+  pl_bind_mount(&#34;/root&#34;, &#34;root&#34;);
+  pl_bind_mount(&#34;/sys&#34;, &#34;sys&#34;);
+  pl_bind_mount(&#34;/dev&#34;, &#34;dev&#34;);
+  pl_bind_mount(&#34;/proc&#34;, &#34;proc&#34;);
+
+  // ensure /etc/resolv.conf is a normal file. Because if it where a symlink,
+  // mounting over it would not work as expected
+  unlink(&#34;etc/resolv.conf&#34;);
+  int fd;
+  if ((fd = open(&#34;etc/resolv.conf&#34;, O_CREAT | O_WRONLY, 0775)) &lt; 0)
+    pl_fatal(&#34;open&#34;);
+  close(fd);
+  pl_bind_mount(&#34;/etc/resolv.conf&#34;, &#34;etc/resolv.conf&#34;);
+
+  read_mounts_from_plashmounts();
+
+  //
+  // Import envs
+  //
+  pl_whitelist_env(&#34;TERM&#34;);
+  pl_whitelist_env(&#34;DISPLAY&#34;);
+  pl_whitelist_env(&#34;PLASH_DATA&#34;);
+  pl_whitelist_envs_from_env(&#34;PLASH_EXPORT&#34;);
+  read_envs_from_plashenv();
+  read_envs_from_plashenvprefix();
+  pl_whitelist_env(NULL);
+
+  //
+  // chroot, then reconstruct working directory
+  //
+  chroot(&#34;.&#34;) != -1 || pl_fatal(&#34;chroot&#34;);
+  pl_chdir(origpwd);
+
+  //
+  // build up the arguments to run
+  //
+  char **run_args = argv + 2;
+  if (*run_args == NULL) {
+    run_args = (char *[]){pl_get_default_root_shell(), &#34;-l&#34;, NULL};
+  }
+
+  //
+  // exec!
+  //
+  execvp(*run_args, run_args);
+  if (errno == ENOENT) {
+    fprintf(stderr, &#34;%s: command not found\n&#34;, *run_args);
+    return 127;
+  }
+  pl_fatal(&#34;execvp&#34;);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

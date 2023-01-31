@@ -1,0 +1,269 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for nodepath</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> nodepath</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash nodepath CONTAINER [--allow-root-container]</pre>
+
+<h2>Description</h2>
+<pre>Prints the path of a given image.
+
+The --allow-root-container option
+allows the root image (&#34;0&#34;) to be specified as image.
+
+</pre>
+
+
+  <h2>Example</h2>
+  <pre>
+$ plash nodepath 19
+home/ihucos/.plashdata/layer/0/2/19
+$ plash nodepath 19 | xargs tree
+</pre>
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/bash
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -exu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash nodepath mynoexistentimage)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">newcont=$(plash build -f 1 --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">nodepath=$(plash nodepath $newcont)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo $nodepath | grep $newcont
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">layerup=$(plash build -f $newcont --layer --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">nodepath=$(plash nodepath $layerup)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo $nodepath | grep $newcont
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo $nodepath | grep $layerup
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• test positive number validation
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath xx   2&gt;&amp;1)&#34; = *&#34;positive number&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath 222x 2&gt;&amp;1)&#34; = *&#34;positive number&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath x222 2&gt;&amp;1)&#34; = *&#34;positive number&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath -1   2&gt;&amp;1)&#34; = *&#34;positive number&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath --   2&gt;&amp;1)&#34; = *&#34;positive number&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath &#34;&#34;   2&gt;&amp;1)&#34; = *&#34;positive number&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• test querying for the special root image
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath 0 2&gt;&amp;1)&#34; = *&#34;special root image&#34;* ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath 0 --allow-root-container 2&gt;&amp;1)&#34; = *&#34;/layer/0&#34; ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash nodepath 0 --allow-root-container
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• check bad PLASH_DATA error
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(PLASH_DATA=/xxx plash nodepath 1 2&gt;&amp;1)&#34; = *&#34;/xxx: No such file or directory&#34; ]]
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• no argument gets help message
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">[[ &#34;$(plash nodepath 2&gt;&amp;1)&#34; = *&#34;usage: &#34;* ]]
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash nodepath CONTAINER [--allow-root-container]\n&#34;
+
+#define _GNU_SOURCE
+#include &lt;assert.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;inttypes.h&gt;
+#include &lt;pwd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+int nodepath_main(int argc, char *argv[]) {
+
+  int i = 0;
+  char *nodepath, *plash_data;
+
+  if (argc &lt; 2) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+
+  // validate/normalize input
+  if (!argv[1][0] || strspn(argv[1], &#34;0123456789&#34;) != strlen(argv[1]))
+    pl_fatal(&#34;image arg must be a positive number, got: %s&#34;, argv[1]);
+
+  if (0 == strcmp(argv[1], &#34;0&#34;) &amp;&amp;
+      (argc &lt;= 2 || 0 != strcmp(argv[2], &#34;--allow-root-container&#34;))) {
+    pl_fatal(&#34;image must not be the special root image (&#39;0&#39;)&#34;);
+  }
+
+  plash_data = pl_call(&#34;data&#34;);
+  if (chdir(plash_data) == -1 || chdir(&#34;index&#34;) == -1)
+    pl_fatal(&#34;run `plash init`: chdir: %s&#34;, plash_data);
+
+  if (!(nodepath = realpath(argv[1], NULL))) {
+    errno = 0;
+    pl_fatal(&#34;no image: %s&#34;, argv[1]);
+  }
+  puts(nodepath);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

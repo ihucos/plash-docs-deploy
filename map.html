@@ -1,0 +1,344 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for map</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> map</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash map KEY [ IMAGE_ID ]</pre>
+
+<h2>Description</h2>
+<pre>Map a container to a key. Use an empty container to delete a key.
+
+</pre>
+
+
+  <h2>Example</h2>
+  <pre>
+
+$ plash build -f alpine
+342
+
+$ plash map myfavorite 342
+
+$ plash map myfavorite
+342
+
+$ plash build --from-map myfavorite
+342
+
+$ plash map myfavorite &#39;&#39;
+
+$ plash map myfavorite
+$
+</pre>
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/bash
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -xeu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash"># create a container 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash create 1 true
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• setting key succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map mykey 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• accessing key returns setted key
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test $(plash map mykey) == 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• overwriting setted key succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map mykey 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test $(plash map mykey) == 2
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• set cache for not existing container fails
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash map thisismykey 9999999999)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• remove cache key succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map rkey 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map rkey &#39;&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• accessing removed cache key return empty string
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(plash map rkey)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = &#34;&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• accessing  cache key that never existed returns empty string
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(plash map mykeydoesnotestits)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = &#34;&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• removing removed key succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map mkey 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map mkey &#39;&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash map mkey &#39;&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• setting key with a `/` fails
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash map hi/da 1)
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash map KEY [ IMAGE_ID ]\n&#34;
+
+#define _GNU_SOURCE
+#include &lt;assert.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;libgen.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+char *plash_data;
+
+void get(char const *linkpath) {
+  char *nodepath;
+  nodepath = realpath(linkpath, NULL);
+  if (nodepath == NULL) {
+    if (errno == ENOENT)
+      return;
+    pl_fatal(&#34;realpath&#34;);
+  }
+  puts(basename(nodepath));
+}
+
+void del(char const *linkpath) {
+  if (unlink(linkpath) == -1) {
+    if (errno == ENOENT)
+      return;
+    pl_fatal(&#34;unlink&#34;);
+  }
+}
+
+void set(char const *linkpath, char *container_id) {
+  char *nodepath;
+
+  nodepath = pl_call(&#34;nodepath&#34;, container_id);
+
+  if (chdir(pl_call(&#34;mkdtemp&#34;)) == -1)
+    pl_fatal(&#34;chdir&#34;);
+  if (asprintf(&amp;nodepath, &#34;..%s&#34;, nodepath + strlen(plash_data)) == -1)
+    pl_fatal(&#34;asprintf&#34;);
+  if (symlink(nodepath, &#34;link&#34;) == -1)
+    pl_fatal(&#34;symlink&#34;);
+  if (rename(&#34;link&#34;, linkpath) == -1)
+    pl_fatal(&#34;rename&#34;);
+}
+
+int map_main(int argc, char *argv[]) {
+
+  char *linkpath;
+
+  if (argc &lt; 2) {
+    {
+      fputs(USAGE, stderr);
+      return EXIT_FAILURE;
+    }
+  }
+
+  plash_data = pl_call(&#34;data&#34;);
+  assert(plash_data);
+  assert(plash_data[0] == &#39;/&#39;);
+
+  // validate map key
+  if (!argv[1][0])
+    pl_fatal(&#34;empty map name not allowed&#34;);
+  else if (strchr(argv[1], &#39;/&#39;) != NULL)
+    pl_fatal(&#34;&#39;/&#39; not allowed in map name&#34;);
+
+  // the location of the symlink for this map key
+  if (asprintf(&amp;linkpath, &#34;%s/map/%s&#34;, plash_data, argv[1]) == -1)
+    pl_fatal(&#34;asprintf&#34;);
+
+  if (argc == 2) {
+    get(linkpath);
+  } else if (argc == 3 &amp;&amp; !argv[2][0]) {
+    del(linkpath);
+  } else if (argc == 3) {
+    set(linkpath, argv[2]);
+  } else {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

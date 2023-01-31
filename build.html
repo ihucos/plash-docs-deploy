@@ -1,0 +1,442 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for build</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> build</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash build --macro1 ar1 arg2 --macro2 arg1 ...</pre>
+
+<h2>Description</h2>
+<pre>Builds an image. Command line options are evaluated as macros. Use `plash
+help-macros` to list all available macros.
+
+</pre>
+
+
+  <h2>Example</h2>
+  <pre>
+
+$ plash build -f ubuntu --run &#39;touch a&#39;
+--&gt; touch a
+--:
+66
+
+$ plash build -f ubuntu:warty --run &#39;touch a&#39; --layer --run &#39;touch b&#39;
+--&gt; touch b
+--:
+67
+
+$ plash build -f ubuntu:warty --apt nmap
+--&gt; apt-get update
+Hit:1 http://security.ubuntu.com/ubuntu bionic-security InRelease
+Get:2 http://archive.ubuntu.com/ubuntu bionic InRelease [235 kB]
+&lt;snip&gt;
+Setting up nmap (7.60-1ubuntu2) ...
+Processing triggers for libc-bin (2.26-0ubuntu2) ...
+--:
+68
+</pre>
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/bash
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -xeu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Building an image with a simple macro succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash build -f 1 --invalidate-layer
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Building an image with with multiple layers succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">id=$(plash build -f 1 -l --invalidate-layer -l --invalidate-layer -l --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash nodepath $id
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash nodepath $id | grep -E &#34;^$(plash data)/layer/0/[0-9]+/[0-9]+/[0-9]+/[0-9]+$&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• A file created while building indeed appears in the builded image
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash build -f 1 --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">newcont=$(plash build -f $cont -x &#39;touch /hellow&#39;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash run $newcont stat /hellow
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Building two times the same leads to the second build being cached
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash build -f 1 --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">stderr=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash build -f $cont -x &#39;touch /a&#39; 2&gt; $stderr
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -s $stderr # its not empty
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash build -f $cont -x &#39;touch /a&#39; 2&gt; $stderr
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! test -s $stderr) # its empty
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• If the actual build command fails with any non-zero exit code, `plash build` return the exit code 1
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash build -f 1 --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set +e
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash build -f $cont -x &#39;exit 42&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test 1 -eq $? || exit 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -e
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Building a non-existent image leads to a non-zero exit code
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash build -f 999)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Building on a base container with no macros given returns that base container
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(plash build -f 1)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out&#34; = 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Using a unknown macro leads to a non-zero exit code
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash build --my-bad-opiton)
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash build --macro1 ar1 arg2 --macro2 arg1 ...\n&#34;
+
+#define _GNU_SOURCE
+#define MAX_BYTES_PER_LAYER 1024 * 4
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+#define PLASH_HINT_IMAGE &#34;### plash hint: image=&#34;
+#define PLASH_HINT_LAYER &#34;### plash hint: layer&#34;
+
+// djb2 non-cryptografic hash function found here:
+// http://www.cse.yorku.ca/~oz/hash.html
+unsigned long hash(char *str) {
+  unsigned long hash = 5381;
+  int c;
+
+  while ((c = *str++))
+    hash = ((hash &lt;&lt; 5) + hash) + c; /* hash * 33 + c */
+
+  return hash;
+}
+
+char *call_plash_create(char *image_id, char *shell_input) {
+  //// run plash create to create this layer
+  FILE *create_stdin, *create_stdout;
+  pid_t create_pid = pl_spawn_process(
+      (char *[]){&#34;/proc/self/exe&#34;, &#34;create&#34;, image_id, &#34;sh&#34;, NULL},
+      &amp;create_stdin, &amp;create_stdout, NULL);
+
+  // send shell input to plash create
+  fputs(shell_input, create_stdin);
+  fclose(create_stdin);
+
+  // exit program if plash create failed
+  int create_exit;
+  if ((create_exit = pl_wait(create_pid)))
+    exit(create_exit);
+
+  // get the image id plash create spitted out
+  image_id = pl_nextline(create_stdout);
+  if (image_id == NULL)
+    pl_fatal(&#34;plash create did not print the image id&#34;);
+  image_id = strdup(image_id);
+  if (image_id == NULL)
+    pl_fatal(&#34;strdup&#34;);
+
+  fclose(create_stdout);
+
+  // print some ASCII to the user
+  fputs(&#34;---\n&#34;, stderr);
+
+  return image_id;
+}
+
+char *cached_call_plash_create(char *base_image_id, char *shell_input) {
+  char *image_id;
+  char *cached_image_id;
+  char *cache_key = NULL;
+  asprintf(&amp;cache_key, &#34;layer:%s:%lu\n&#34;, base_image_id, hash(shell_input)) ||
+      pl_fatal(&#34;asprintf&#34;);
+  cached_image_id = pl_call(&#34;map&#34;, cache_key);
+  if (strcmp(cached_image_id, &#34;&#34;) != 0) {
+    return cached_image_id;
+  } else {
+    image_id = call_plash_create(base_image_id, shell_input);
+    pl_call(&#34;map&#34;, cache_key, image_id);
+    return image_id;
+  }
+}
+
+int build_main(int argc, char *argv[]) {
+  char create_stdin_buf[MAX_BYTES_PER_LAYER];
+  char *image_id;
+  char *base_image_id;
+  char *line;
+
+  // mold args for plash eval process
+  char *args[argc + 1];
+  size_t i = 0;
+  args[i++] = &#34;/proc/self/exe&#34;;
+  args[i++] = &#34;eval&#34;;
+  argv++;
+  while (*argv)
+    args[i++] = *(argv++);
+  args[i++] = NULL;
+
+  // run plash eval to get build shell script
+  FILE *eval_stdout;
+  pid_t eval_pid = pl_spawn_process(args, NULL, &amp;eval_stdout, NULL);
+
+  int eval_exit;
+  if ((eval_exit = pl_wait(eval_pid)))
+    exit(eval_exit);
+
+  // read first line
+  line = pl_nextline(eval_stdout);
+
+  // First line must be the image id hint
+  if (line == NULL ||
+      strncmp(line, PLASH_HINT_IMAGE, strlen(PLASH_HINT_IMAGE)) != 0) {
+    pl_fatal(&#34;First thing given must be the base image to use&#34;);
+  }
+
+  // parse image id from first output line. We need to know which is the base
+  // image id in order to start building
+  base_image_id = line + strlen(PLASH_HINT_IMAGE);
+  base_image_id = strdup(base_image_id);
+  if (base_image_id == NULL)
+    pl_fatal(&#34;strdup&#34;);
+  image_id = base_image_id;
+
+  // go trough all lines returned by plash eval
+  while (!feof(eval_stdout)) {
+
+    line = pl_nextline(eval_stdout);
+
+    // This is an empty layer, skip it.
+    if (line == NULL || (strcmp(line, PLASH_HINT_LAYER) == 0))
+      continue;
+
+    FILE *create_stdin =
+        fmemopen(create_stdin_buf, sizeof(create_stdin_buf), &#34;w&#34;);
+    if (create_stdin == NULL)
+      pl_fatal(&#34;fmemopen&#34;);
+
+    // some extras before evaluating the build shell script
+    fputs(&#34;PS4=&#39;--&gt; &#39;\n&#34;, create_stdin);
+
+    // Hack for ubuntu, where for whatever reason PATH is not exported;
+    fputs(&#34;export PATH\n&#34;, create_stdin);
+
+    fputs(&#34;set -ex\n&#34;, create_stdin);
+
+    //// redirect all lines from the eval subcommand to create subcommand. Stop
+    // if a new layer is found
+    fputs(line, create_stdin);
+    fputs(&#34;\n&#34;, create_stdin);
+    while ((line = pl_nextline(eval_stdout)) &amp;&amp;
+           strcmp(line, PLASH_HINT_LAYER) != 0) {
+      fputs(line, create_stdin);
+      fputs(&#34;\n&#34;, create_stdin);
+    }
+
+    // flush stuff in create_stdin to appear in create_stdin_buf
+    fflush(create_stdin);
+
+    // get our new image_id where we can build our next layer on top of it.
+    image_id = cached_call_plash_create(image_id, create_stdin_buf);
+  }
+
+  if (strcmp(base_image_id, image_id) == 0) {
+    // This happens of &#34;plash build -f 1&#34; invocations. Let&#39;s just validate that
+    // image is correct.
+    pl_call(&#34;nodepath&#34;, image_id);
+  }
+  puts(image_id);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

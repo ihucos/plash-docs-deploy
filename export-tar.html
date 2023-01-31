@@ -1,0 +1,187 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for export-tar</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> export-tar</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash export-tar CONTAINER [ FILE | - ]</pre>
+
+<h2>Description</h2>
+<pre>
+Export container as tar archive. It exports the file system of a container
+to the given file as a compressed tar archive.  If no file is supplied or the
+file is &#39;-&#39; the tar archive wil be printed to stdout instead.
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/bash
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -xeu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• tar written to file in first argument
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tmp=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash export-tar 1 $tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tar --list -f $tmp &gt;/dev/null
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• tar printed to stdout if no arguments
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tmp=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash export-tar 1 &gt; $tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tar --list -f $tmp &gt;/dev/null
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• tar printed to stdout if `-` is the first argument
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tmp=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash export-tar 1 - &gt; $tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tar --list -f $tmp &gt;/dev/null
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• exported tar looks like a rootfs
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tmp=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash export-tar 1 &gt; $tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tar --list -f $tmp | grep /etc/passwd
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tar --list -f $tmp | grep /bin/sh
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash export-tar CONTAINER [ FILE | - ]\n&#34;
+
+#include &lt;stddef.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+int export_tar_main(int argc, char *argv[]) {
+  char *image_id, *file;
+  if (!(image_id = argv[1])) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+  if (!(file = argv[2]))
+    file = &#34;-&#34;;
+  pl_unshare_user();
+  execvp(&#34;/proc/self/exe&#34;, (char *[]){&#34;plash&#34;, &#34;with-mount&#34;, image_id, &#34;tar&#34;,
+                                      &#34;-cf&#34;, file, &#34;.&#34;, NULL});
+  pl_fatal(&#34;exec&#34;);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

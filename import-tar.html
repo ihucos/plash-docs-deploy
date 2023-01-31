@@ -1,0 +1,171 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for import-tar</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> import-tar</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash import-tar [ TARFILE ]</pre>
+
+<h2>Description</h2>
+<pre>Create a container from a tar file.
+If the TARFILE argument is ommited, the tar file is read from stdin.
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -ex
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tar=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash b export-tar -f 1 --run &#39;touch /myperson&#39; -- $tar
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• importing tar file succeeds
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">new=$(plash import-tar $tar)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash with-mount $new ls ./myperson
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• can import file from stdin
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cat $tar | plash import-tar
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• importing invalid or missing file fails
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash import-tar /doesnotexistssssh_really_4423487)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">badtar=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash import-tar $badtar)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• importing invalid file from stdin fails
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! echo &#39;invalid&#39; | plash import-tar)
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash import-tar [ TARFILE ]\n&#34;
+
+#include &lt;plash.h&gt;
+#include &lt;stddef.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+int import_tar_main(int argc, char *argv[]) {
+  char *tarfile = argv[1];
+  if (tarfile == NULL) {
+    tarfile = &#34;-&#34;;
+  }
+  char *tmpdir = pl_call(&#34;mkdtemp&#34;);
+  pl_run(&#34;/proc/self/exe&#34;, &#34;sudo&#34;, &#34;tar&#34;, &#34;-C&#34;, tmpdir, &#34;-xf&#34;, tarfile);
+  execlp(&#34;/proc/self/exe&#34;, &#34;plash&#34;, &#34;add-layer&#34;, &#34;0&#34;, tmpdir, NULL);
+  pl_fatal(&#34;execlp&#34;);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for purge</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> purge</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash purge [ --yes ]</pre>
+
+<h2>Description</h2>
+<pre>Deletes all build data unatomically. Running containers that rely on the
+build data will enter an undefined state. Plashs behaviour while this command
+did not finish running returning an non zero exit code is undefined. The
+data directory itself is not deleted as it could be a mountpoint.
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -eux
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Purge deletes plash data when confirmed
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">export PLASH_DATA=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#39;y&#39; | plash purge
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls -A $PLASH_DATA)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">! test -n &#34;$out&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Purge does not deletes plash data when confirmed badly
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">export PLASH_DATA=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set +ex
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#39;jap&#39; | plash purge
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -ex
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls -A $PLASH_DATA)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -n &#34;$out&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• purge two times
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">export PLASH_DATA=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash purge --yes
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash purge --yes
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• call plash purge on empty plash data
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">export PLASH_DATA=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash purge --yes
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• check that purge removes all data in the PLASH_DATA directory
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">export PLASH_DATA=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls -A $PLASH_DATA)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -n &#34;$out&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash purge --yes
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls -A $PLASH_DATA)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -z &#34;$out&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• not confirming does not delete the data
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">export PLASH_DATA=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash init
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set +ex
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#39;no&#39; | plash purge
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -ex
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out=$(ls -A $PLASH_DATA)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -n &#34;$out&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Bad confirmation leads to bad exit satus
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">! echo no | plash purge
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash purge [ --yes ]\n&#34;
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+int confirm_via_input() {
+  printf(&#34;Delete all build data? [y/N] &#34;);
+  char inp[sizeof(&#34;y\n&#34;)];
+  fgets(inp, sizeof(inp), stdin);
+  return (strcmp(inp, &#34;y\n&#34;) == 0);
+}
+
+int is_confirmed_via_argv(char **argv) {
+  return (argv[1] &amp;&amp; (strcmp(argv[1], &#34;--yes&#34;) == 0));
+}
+
+int purge_main(int argc, char *argv[]) {
+
+  if (!(is_confirmed_via_argv(argv) || confirm_via_input())) {
+    fputs(&#34;Action not confirmed\n&#34;, stderr);
+    return EXIT_FAILURE;
+  }
+
+  pl_unshare_user();
+
+  char *plash_data = pl_call(&#34;data&#34;);
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir %s&#34;, plash_data);
+
+  // this one first
+  pl_run(&#34;rm&#34;, &#34;rm&#34;, &#34;-rf&#34;, &#34;id_counter&#34;, NULL);
+
+  pl_run(&#34;rm&#34;, &#34;-rf&#34;, &#34;index&#34;);
+  pl_run(&#34;rm&#34;, &#34;-rf&#34;, &#34;layer&#34;);
+  pl_run(&#34;rm&#34;, &#34;-rf&#34;, &#34;map&#34;);
+  pl_run(&#34;rm&#34;, &#34;-rf&#34;, &#34;mnt&#34;);
+  pl_run(&#34;rm&#34;, &#34;-rf&#34;, &#34;tmp&#34;);
+  fputs(&#34;All deleted.\n&#34;, stderr);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

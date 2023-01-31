@@ -1,0 +1,263 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for mount</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> mount</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash mount IMAGE_ID MOUNTPOINT [ CHANGESDIR ]</pre>
+
+<h2>Description</h2>
+<pre>
+Mount a container-filesystem. Changes to the filesystem will be written to
+CHANGESDIR.
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/bash
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set eux
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Can mount a container
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tmp=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash sudo sh -c &#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash mount 1 $tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">grep  $tmp&#39; &#39;  /proc/mounts &gt;/dev/null || {
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  echo &#39;Could not find mountpoint in /proc/mounts &#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  exit 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">}
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -d $tmp/usr
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -d $tmp/bin
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test -d $tmp/var
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• check bad chars
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">tmp=$(mktemp -d)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">changesdir=$tmp/&#39;!@#$%^&amp;*()&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mkdir $tmp/mp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mkdir $changesdir
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash mount 1 /tmp/mp &#34;$changesdir&#34; )
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define _GNU_SOURCE
+
+#include &lt;errno.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+#define USAGE &#34;usage: plash mount IMAGE_ID MOUNTPOINT [ CHANGESDIR ]\n&#34;
+
+#define CHANGESDIR_ALLOWED_CHARS                                               \
+  &#34;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-_&#34;
+
+char *prepare_lowerdir(char *image_id) {
+  char *lowerdir = &#34;&#34;;
+  char *plash_data = pl_call(&#34;data&#34;);
+  char *nodepath = pl_call(&#34;nodepath&#34;, image_id);
+  int offset = strlen(plash_data) + strlen(&#34;/layer/&#34;);
+  if (strlen(nodepath) &lt; offset) {
+    pl_fatal(&#34;Unexpected interal error: nodepath command output is shorter &#34;
+             &#34;than data command output&#34;);
+  }
+  char *curr;
+  char *str = nodepath + offset;
+  while ((curr = strsep(&amp;str, &#34;/&#34;))) {
+    asprintf(&amp;lowerdir, &#34;%s/index/%s/_data/root:%s&#34;, plash_data, curr,
+             lowerdir) != -1 ||
+        pl_fatal(&#34;asprintf&#34;);
+  }
+  lowerdir[strlen(lowerdir) - 1] = &#39;\0&#39;; // chop the last &#34;:&#34;
+  return lowerdir;
+}
+
+char *prepare_workdir(char *changesdir) {
+  char *workdir;
+  asprintf(&amp;workdir, &#34;%s/work&#34;, changesdir) != -1 || pl_fatal(&#34;asprintf&#34;);
+  if (mkdir(workdir, 0755) == -1 &amp;&amp; errno != EEXIST)
+    pl_fatal(&#34;mkdir&#34;);
+  return workdir;
+}
+
+char *prepare_datadir(char *changesdir) {
+  char *datadir;
+  asprintf(&amp;datadir, &#34;%s/data&#34;, changesdir) != -1 || pl_fatal(&#34;asprintf&#34;);
+  if (mkdir(datadir, 0755) == -1 &amp;&amp; errno != EEXIST)
+    pl_fatal(&#34;mkdir&#34;);
+  return datadir;
+}
+
+void validate_changesdir(char *changesdir) {
+  int found_in_allowed;
+  for (size_t i = 0; changesdir[i]; i++) {
+    found_in_allowed = 0;
+    for (size_t j = 0; strlen(CHANGESDIR_ALLOWED_CHARS) &gt; j; j++) {
+      if (changesdir[i] == CHANGESDIR_ALLOWED_CHARS[j]) {
+        found_in_allowed = 1;
+      }
+    }
+    if (!found_in_allowed) {
+      pl_fatal(&#34;Not allowed charachter found in changesdir: %c&#34;, changesdir[i]);
+    }
+  }
+}
+
+int mount_main(int argc, char *argv[]) {
+
+  if (argc &lt; 3) {
+    {
+      fputs(USAGE, stderr);
+      return EXIT_FAILURE;
+    }
+  }
+  char *image_id = argv[1];
+  char *mountpoint = argv[2];
+  char *changesdir = argv[3];
+
+  char *mount_opts;
+
+  if (changesdir != NULL) {
+    validate_changesdir(changesdir);
+    if (mkdir(changesdir, 0755) == -1 &amp;&amp; errno != EEXIST)
+      pl_fatal(&#34;mkdir %s&#34;, changesdir);
+    asprintf(&amp;mount_opts, &#34;lowerdir=%s,workdir=%s,upperdir=%s&#34;,
+             prepare_lowerdir(image_id), prepare_workdir(changesdir),
+             prepare_datadir(changesdir)) != -1 ||
+        pl_fatal(&#34;asprintf&#34;);
+  } else {
+    asprintf(&amp;mount_opts, &#34;lowerdir=%s&#34;, prepare_lowerdir(image_id)) != -1 ||
+        pl_fatal(&#34;asprintf&#34;);
+  }
+  execlp(&#34;mount&#34;, &#34;mount&#34;, &#34;-t&#34;, &#34;overlay&#34;, &#34;overlay&#34;, &#34;-o&#34;, mount_opts,
+         mountpoint, NULL);
+  pl_fatal(&#34;execlp&#34;);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

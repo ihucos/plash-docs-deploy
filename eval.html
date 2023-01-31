@@ -1,0 +1,461 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for eval</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> eval</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash eval ...\n&#34;     </pre>
+
+<h2>Description</h2>
+<pre>Generates a build script. It prints the shell script generated from
+evaluating the macros passed as args. `plash build` passes its arguments to
+this script in order to get a shell script with the build instructions.
+</pre>
+
+
+
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash eval ...\n&#34;       \
+  &#34;--hint               write a hint for consumer programs\n&#34;                  \
+  &#34;--entrypoint         hint default command for this build\n&#34;                 \
+  &#34;--entrypoint-script  write lines to /entrypoint and hint it as default &#34;    \
+  &#34;command\n&#34;                                                                  \
+  &#34;--env                Use env from host when running image\n&#34;                \
+  &#34;--env-prefix         Use all envs with given prefix when running image\n&#34;   \
+  &#34;--eval-file          evaluate file content as expressions\n&#34;                \
+  &#34;--eval-github        eval a file (default &#39;plashfile&#39;) from a github &#34;      \
+  &#34;repo\n&#34;                                                                     \
+  &#34;--eval-stdin         evaluate expressions read from stdin\n&#34;                \
+  &#34;--hash-path          recursively hash files and add as cache key\n&#34;         \
+  &#34;--import-env         import environment variables from host while &#34;         \
+  &#34;building\n&#34;                                                                 \
+  &#34;--invalidate-layer   invalidate the cache of the current layer\n&#34;           \
+  &#34;--layer              hints the start of a new layer\n&#34;                      \
+  &#34;--mount              Mount filesystem when running image (\&#34;src:dst\&#34; &#34;     \
+  &#34;supported)\n&#34;                                                               \
+  &#34;--run                directly emit shell script\n&#34;                          \
+  &#34;--run-stdin          run commands read from stdin\n&#34;                        \
+  &#34;--write-file         write lines to a file\n&#34;                               \
+  &#34;--write-script       write an executable (755) file to the filesystem\n&#34;    \
+  &#34;--from               guess from where to take the image\n&#34;                  \
+  &#34;--from-docker        use image from local docker\n&#34;                         \
+  &#34;--from-github        build and use a file (default &#39;plashfile&#39;) from a &#34;    \
+  &#34;github repo\n&#34;                                                              \
+  &#34;--from-id            specify the image from an image id\n&#34;                  \
+  &#34;--from-lxc           use images from images.linuxcontainers.org\n&#34;          \
+  &#34;--from-map           use resolved map as image\n&#34;                           \
+  &#34;--from-url           import image from an url\n&#34;                            \
+  &#34;--apk                install packages with apk\n&#34;                           \
+  &#34;--apt                install packages with apt\n&#34;                           \
+  &#34;--dnf                install packages with dnf\n&#34;                           \
+  &#34;--emerge             install packages with emerge\n&#34;                        \
+  &#34;--npm                install packages with npm\n&#34;                           \
+  &#34;--pacman             install packages with pacman\n&#34;                        \
+  &#34;--pip                install packages with pip\n&#34;                           \
+  &#34;--pip3               install packages with pip3\n&#34;                          \
+  &#34;--yum                install packages with yum\n&#34;                           \
+  &#34;--A                  alias for: --from alpine:edge --apk [ARG1 [ARG2 &#34;      \
+  &#34;[...]]]\n&#34;                                                                  \
+  &#34;--C                  alias for: --from centos:8 --yum [ARG1 [ARG2 &#34;         \
+  &#34;[...]]]\n&#34;                                                                  \
+  &#34;--D                  alias for: --from debian:sid --apt [ARG1 [ARG2 &#34;       \
+  &#34;[...]]]\n&#34;                                                                  \
+  &#34;--F                  alias for: --from fedora:32 --dnf [ARG1 [ARG2 &#34;        \
+  &#34;[...]]]\n&#34;                                                                  \
+  &#34;--G                  alias for: --from gentoo:current --emerge [ARG1 &#34;      \
+  &#34;[ARG2 [...]]]\n&#34;                                                            \
+  &#34;--R                  alias for: --from archlinux:current --pacman [ARG1 &#34;   \
+  &#34;[ARG2 [...]]]\n&#34;                                                            \
+  &#34;--U                  alias for: --from ubuntu:focal --apt [ARG1 [ARG2 &#34;     \
+  &#34;[...]]]\n&#34;                                                                  \
+  &#34;--f                  alias for: --from [ARG1 [ARG2 [...]]]\n&#34;               \
+  &#34;--l                  alias for: --layer [ARG1 [ARG2 [...]]]\n&#34;              \
+  &#34;--x                  alias for: --run [ARG1 [ARG2 [...]]]\n&#34;
+
+#define _GNU_SOURCE
+#include &lt;ctype.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;time.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+#define QUOTE_REPLACE &#34;&#39;\&#34;&#39;\&#34;&#39;&#34;
+#define eval_with_args(...) eval_with_args_array((char *[]){__VA_ARGS__, NULL})
+
+static char **tokens, *arg;
+
+char *quote(char *str) {
+  size_t i, j, quotes_found = 0, quoted_counter = 0;
+  for (i = 0; str[i]; i++) {
+    if (str[i] == &#39;\&#39;&#39;)
+      quotes_found++;
+  }
+  char *quoted = malloc((quotes_found * strlen(QUOTE_REPLACE) + strlen(str)) +
+                        2   // for the enclousing quotes
+                        + 1 // for the string terminator
+  );
+  quoted[quoted_counter++] = &#39;\&#39;&#39;;
+  for (i = 0; str[i]; i++) {
+    if (str[i] == &#39;\&#39;&#39;) {
+      // append the string QUOTE_REPLACE
+      for (j = 0; QUOTE_REPLACE[j]; j++)
+        quoted[quoted_counter++] = QUOTE_REPLACE[j];
+    } else {
+      quoted[quoted_counter++] = str[i];
+    }
+  }
+  quoted[quoted_counter++] = &#39;\&#39;&#39;;
+  quoted[quoted_counter++] = &#39;\0&#39;;
+
+  return quoted;
+}
+
+char *call_cached(char *subcommand, char *arg) {
+  char *cache_key, *image_id;
+  asprintf(&amp;cache_key, &#34;%s:%s&#34;, subcommand, arg) != -1 || pl_fatal(&#34;asprintf&#34;);
+
+  for (size_t i = 0; cache_key[i]; i++) {
+    if (cache_key[i] == &#39;/&#39;)
+      cache_key[i] = &#39;%&#39;;
+  }
+
+  image_id = pl_call(&#34;map&#34;, cache_key);
+  if (strlen(image_id) == 0) {
+    image_id = pl_call(subcommand, arg);
+    pl_call(&#34;map&#34;, cache_key, image_id);
+  }
+  return image_id;
+}
+
+int isarg(char *val) {
+  if (val == NULL)
+    return EXIT_SUCCESS;
+  if (val[0] == &#39;-&#39;)
+    return EXIT_SUCCESS;
+  return EXIT_FAILURE;
+}
+
+char *getarg_or_null() {
+  if (isarg(*(tokens + 1))) {
+    tokens++;
+    arg = *tokens;
+    return arg;
+  } else {
+    return NULL;
+  }
+}
+
+char *getarg() {
+  char *arg = getarg_or_null();
+  if (!arg) {
+    while ((!isarg(arg)))
+      pl_fatal(&#34;missing arg for: %s&#34;, *tokens);
+  }
+  return arg;
+}
+
+size_t countargs() {
+  size_t argscount = 0;
+  char **orig_tokens = tokens;
+  while (getarg_or_null())
+    argscount++;
+  tokens = orig_tokens;
+  return argscount;
+}
+
+void printarg(char *fmt) { printf(fmt, quote(arg)); }
+
+void eachline(char *fmt) {
+  while (getarg_or_null())
+    printarg(fmt);
+}
+
+void pkg(char *cmd_prefix) {
+  if (!isarg(*(tokens + 1))) {
+    return;
+  }
+  printf(&#34;%s&#34;, cmd_prefix);
+  while (getarg_or_null())
+    printf(&#34; %s&#34;, quote(arg));
+  printf(&#34;\n&#34;);
+}
+
+void printhint(char *name, char *val) {
+  if (val != NULL) {
+    printf(&#34;### plash hint: %s=%s\n&#34;, name, val);
+  } else {
+    printf(&#34;### plash hint: %s\n&#34;, name);
+  }
+}
+
+int tokenis(char *macro) { return (strcmp(*tokens, macro) == 0); }
+
+void eval_with_args_array(char **middel_args) {
+
+  size_t pre_args_len = 0;
+  while (middel_args[pre_args_len])
+    pre_args_len++;
+
+  char *args[countargs() + pre_args_len +
+             2   // for the elements &#34;plash&#34; and &#34;eval&#34; (see below)
+             + 1 // for the NULL terminator
+  ];
+
+  size_t index = 0;
+  args[index++] = &#34;/proc/self/exe&#34;;
+  args[index++] = &#34;eval&#34;;
+  for (int j = 0; middel_args[j]; j++) {
+    args[index++] = middel_args[j];
+  }
+  while (getarg_or_null()) {
+    args[index++] = arg;
+  }
+  args[index++] = NULL;
+  _pl_run(args);
+}
+
+int eval_main(int argc, char *argv[]) {
+
+  // handle help flag
+  if (argv[1] &amp;&amp; (strcmp(argv[1], &#34;--help&#34;)) == 0) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+
+  tokens = argv;
+  while (*(++tokens)) {
+    arg = NULL;
+
+    if (tokenis(&#34;--from&#34;) || tokenis(&#34;-f&#34;)) {
+      getarg();
+      int i, only_digits = 1;
+      for (i = 0; arg[i]; i++) {
+        if (!isdigit(arg[i]))
+          only_digits = 0;
+      }
+      if (only_digits) {
+        pl_run(&#34;/proc/self/exe&#34;, &#34;eval&#34;, &#34;--from-id&#34;, arg);
+      } else {
+        pl_run(&#34;/proc/self/exe&#34;, &#34;eval&#34;, &#34;--from-lxc&#34;, arg);
+      }
+
+    } else if (tokenis(&#34;--hint&#34;)) {
+      printhint(getarg(), getarg_or_null());
+
+    } else if (tokenis(&#34;--from-id&#34;)) {
+      printhint(&#34;image&#34;, getarg());
+
+    } else if (tokenis(&#34;--from-docker&#34;)) {
+      printhint(&#34;image&#34;, call_cached(&#34;import-docker&#34;, getarg()));
+
+    } else if (tokenis(&#34;--from-url&#34;)) {
+      printhint(&#34;image&#34;, call_cached(&#34;import-url&#34;, getarg()));
+
+    } else if (tokenis(&#34;--from-map&#34;)) {
+      char *image_id = pl_call(&#34;map&#34;, getarg());
+      if (image_id[0] == &#39;\0&#39;) {
+        pl_fatal(&#34;No such map: %s&#34;, arg);
+      }
+      printhint(&#34;image&#34;, image_id);
+
+    } else if (tokenis(&#34;--entrypoint-script&#34;)) {
+      pl_run(&#34;/proc/self/exe&#34;, &#34;eval&#34;, &#34;--entrypoint&#34;, &#34;/entrypoint&#34;);
+      eval_with_args(&#34;--write-script&#34;, &#34;/entrypoint&#34;);
+
+    } else if (tokenis(&#34;--write-file&#34;)) {
+      char *filename = getarg();
+      printf(&#34;touch %s\n&#34;, quote(filename));
+      while (getarg_or_null())
+        printf(&#34;echo %s &gt;&gt; %s\n&#34;, quote(arg), quote(filename));
+
+    } else if (tokenis(&#34;--write-script&#34;)) {
+      char *script = getarg();
+      eval_with_args(&#34;--write-file&#34;, arg);
+      printf(&#34;chmod 755 %s\n&#34;, quote(script));
+
+    } else if (tokenis(&#34;--eval-url&#34;)) {
+      pl_pipe(
+          (char *[]){&#34;curl&#34;, &#34;--fail&#34;, &#34;--no-progress-meter&#34;, getarg(), NULL},
+          (char *[]){&#34;/proc/self/exe&#34;, &#34;eval-plashfile&#34;, NULL});
+
+    } else if (tokenis(&#34;--eval-github&#34;)) {
+      char *url, *user_repo_pair, *file;
+      user_repo_pair = getarg();
+      if (strchr(user_repo_pair, &#39;/&#39;) == NULL)
+        pl_fatal(&#34;--eval-github: user-repo-pair must include a slash (got %s)&#34;,
+                 user_repo_pair);
+      if (!(file = getarg_or_null()))
+        file = &#34;plashfile&#34;;
+      asprintf(&amp;url, &#34;https://raw.githubusercontent.com/%s/master/%s&#34;,
+               user_repo_pair, file) != -1 ||
+          pl_fatal(&#34;asprintf&#34;);
+      pl_pipe((char *[]){&#34;curl&#34;, &#34;--fail&#34;, &#34;--no-progress-meter&#34;, url, NULL},
+              (char *[]){&#34;/proc/self/exe&#34;, &#34;eval-plashfile&#34;, NULL});
+
+    } else if (tokenis(&#34;--hash-path&#34;)) {
+      while (getarg_or_null()) {
+        printf(&#34;: hash-path &#34;);
+        fflush(stdout);
+        pl_pipe((char *[]){&#34;tar&#34;, &#34;-c&#34;, arg, NULL},
+                (char *[]){&#34;sha512sum&#34;, NULL});
+      }
+
+    } else if (tokenis(&#34;--entrypoint&#34;)) {
+      printf(&#34;echo -n &#39;exec &#39; &gt;&gt; /.plashentrypoint\n&#34;);
+      printf(&#34;chmod +x /.plashentrypoint\n&#34;);
+      while (getarg_or_null()) {
+        printf(&#34;echo -n %s &#39; &#39; &gt;&gt; /.plashentrypoint\n&#34;, quote(quote(arg)));
+      }
+      printf(&#34;echo &#39; \&#34;$@\&#34;&#39; &gt;&gt; /.plashentrypoint\n&#34;);
+
+    } else if (tokenis(&#34;--env&#34;)) {
+      eachline(&#34;echo %s &gt;&gt; /.plashenvs\n&#34;);
+
+    } else if (tokenis(&#34;--env-prefix&#34;)) {
+      eachline(&#34;echo %s &gt;&gt; /.plashenvsprefix\n&#34;);
+
+    } else if (tokenis(&#34;--mount&#34;)) {
+      eachline(&#34;echo %s &gt;&gt; /.plashmount\n&#34;);
+
+    } else if (tokenis(&#34;--eval-file&#34;)) {
+      pl_run(&#34;/proc/self/exe&#34;, &#34;eval-plashfile&#34;, getarg());
+
+    } else if (tokenis(&#34;--eval-stdin&#34;)) {
+      pl_run(&#34;/proc/self/exe&#34;, &#34;eval-plashfile&#34;);
+
+    } else if (tokenis(&#34;--from-lxc&#34;)) {
+      printhint(&#34;image&#34;, call_cached(&#34;import-lxc&#34;, getarg()));
+
+    } else if (tokenis(&#34;--run-stdin&#34;)) {
+      int c;
+      while ((c = getchar()) != EOF)
+        putchar(c);
+
+    } else if (tokenis(&#34;--from-url&#34;)) {
+      printhint(&#34;image&#34;, getarg());
+
+    } else if (tokenis(&#34;--import-env&#34;)) {
+      char *env, *export_as, *env_val;
+      while (getarg_or_null()) {
+        env = strtok(arg, &#34;:&#34;);
+        export_as = strtok(NULL, &#34;:&#34;);
+        if (export_as == NULL) {
+          export_as = env;
+        }
+        char *env_val = getenv(env);
+        if (env_val != NULL) {
+          // export_as is not escaped!
+          printf(&#34;%s=%s\n&#34;, export_as, quote((env_val)));
+        }
+      }
+    } else if (tokenis(&#34;--invalidate-layer&#34;)) {
+      struct timespec tp;
+      clock_gettime(CLOCK_MONOTONIC, &amp;tp);
+      printf(&#34;: invalidate cache with %ld\n&#34;, tp.tv_nsec);
+    } else if (tokenis(&#34;--layer&#34;) || tokenis(&#34;-l&#34;)) {
+      printhint(&#34;layer&#34;, NULL);
+
+    } else if (tokenis(&#34;--run&#34;) || tokenis(&#34;-x&#34;)) {
+      while (getarg_or_null())
+        printf(&#34;%s\n&#34;, arg);
+
+    } else if (tokenis(&#34;--apk&#34;)) {
+      pkg(&#34;apk update\napk add&#34;);
+
+    } else if (tokenis(&#34;--apt&#34;)) {
+      pkg(&#34;apt-get update\napt-get install -y&#34;);
+
+    } else if (tokenis(&#34;--dnf&#34;)) {
+      pkg(&#34;dnf install -y&#34;);
+
+    } else if (tokenis(&#34;--emerge&#34;)) {
+      pkg(&#34;emerge&#34;);
+
+    } else if (tokenis(&#34;--npm&#34;)) {
+      pkg(&#34;npm install -g&#34;);
+
+    } else if (tokenis(&#34;--pacman&#34;)) {
+      pkg(&#34;pacman -Sy --noconfirm&#34;);
+
+    } else if (tokenis(&#34;--pip&#34;)) {
+      pkg(&#34;pip install&#34;);
+
+    } else if (tokenis(&#34;--pip3&#34;)) {
+      pkg(&#34;pip3 install&#34;);
+
+    } else if (tokenis(&#34;--yum&#34;)) {
+      pkg(&#34;yum install -y&#34;);
+
+    } else if (tokenis(&#34;-A&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;alpine:edge&#34;, &#34;--apk&#34;);
+
+    } else if (tokenis(&#34;-U&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;ubuntu:jammy&#34;, &#34;--apt&#34;);
+
+    } else if (tokenis(&#34;-F&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;fedora:37&#34;, &#34;--dnf&#34;);
+
+    } else if (tokenis(&#34;-D&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;debian:sid&#34;, &#34;--apt&#34;);
+
+    } else if (tokenis(&#34;-C&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;centos:9-Stream&#34;, &#34;--yum&#34;);
+
+    } else if (tokenis(&#34;-R&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;archlinux:current&#34;, &#34;--pacman&#34;);
+
+    } else if (tokenis(&#34;-G&#34;)) {
+      eval_with_args(&#34;--from&#34;, &#34;gentoo:current&#34;, &#34;--emerge&#34;);
+
+    } else if (tokenis(&#34;--#&#34;) || tokenis(&#34;-#&#34;)) {
+      while (getarg_or_null())
+        ;
+
+    } else if (isarg(*tokens)) {
+      errno = 0;
+      pl_fatal(&#34;expected macro, got value: %s&#34;, *tokens);
+    } else {
+      errno = 0;
+      pl_fatal(&#34;unknown macro: %s&#34;, *tokens);
+    }
+
+    // Somehow because we are calling subprocesses we need this to ensure the
+    //  order of lines written to stdout stays in the expected order.
+    fflush(stdout);
+  }
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

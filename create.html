@@ -1,0 +1,424 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for create</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> create</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash create CONTAINER [ CMD1 [ CMD2 ... ] ]</pre>
+
+<h2>Description</h2>
+<pre>Creates a new container from a command. If no command is passed, a shell is
+started. The new container is printed to stdout, all other output goes to
+stderr. Note that a new container is only returned if the build command
+returns 0 (success) as exit code.  For most cases use `plash build` for a
+higher level interface.
+
+</pre>
+
+
+  <h2>Example</h2>
+  <pre>
+
+$ plash create 7 ./buildscript.sh
+42
+
+$ sudo plash create 3
+home/fulano # echo &#39;hello&#39; &gt; /file
+home/fulano # exit 0
+71
+
+$ plash b create -f ubuntu -- touch /myfile
+44
+</pre>
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/bash
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -eux
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• creating a new container succeedes
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash create 1 true
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• filesystem changes are persisted
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">new=$(plash create 1 touch /myfileah)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash with-mount $new ls ./myfileah
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• shell is started when no build arguments specified
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">echo &#39;echo hi&#39; | plash create 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• multiple containers can be created on top of each other
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash create $(plash create $(plash create $(plash create 1 true) true) true) true
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• hierarchical creations have a parent relationship
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">layer1=$(plash create 1 touch /a)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">layer2=$(plash create $layer1 touch /b)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test $(plash parent $layer2) = $layer1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• hierarchical containers are hierarchically represented in the filesystem
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">np1=$(plash nodepath $layer1)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">np2=$(plash nodepath $layer2)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test $(basename $np1) = $(basename $(dirname $np2))
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• working directory when building is current working directory from caller
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cd /home
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash build -f 1 --invalidate-layer -x &#39;test $(pwd) == /home&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cd -
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• home is mounted when building
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash build -f 1 -x &#39;ls -1 /home &gt; /tmp/out&#39;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">np=$(plash nodepath $cont)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cmp $np/_data/root/tmp/out &lt;(ls -1 /home)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• tmp is not mounted when building
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">mktemp /tmp/XXXXXXXXXXX
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash build -f 1 -x &#39;test -z $(ls /tmp)&#39;)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• any build error returns exit code 1
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set +e
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash create exit 42
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test 1 -eq $? || exit 1
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -e
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• build error does not return any container
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">stdout=$(mktemp)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash create 1 false &gt; $stdout)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! test -s $stdout) # its empty
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• PLASH_EXPORT is ignored
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$(PLASH_EXPORT=A A=a plash create 1 sh -c &#39;echo MARKER$A&#39; 2&gt;&amp;1 | grep MARKER | grep -v +)&#34; = &#39;MARKER&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• HOME is exported
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$(HOME=a plash create 1 sh -c &#39;echo MARKER$HOME&#39; --invalidate-layer 2&gt;&amp;1 | grep MARKER | grep -v +)&#34; = MARKERa
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash create CONTAINER [ CMD1 [ CMD2 ... ] ]\n&#34;
+
+#define _GNU_SOURCE
+
+#include &lt;errno.h&gt;
+#include &lt;stddef.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+int create_main(int argc, char *argv[]) {
+
+  char *plash_data = pl_call(&#34;data&#34;);
+  char *image_id = argv[1];
+  if (image_id == NULL) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+
+  // validate image exists
+  pl_call(&#34;nodepath&#34;, image_id);
+
+  argv++; // chop argv[0]
+  argv++; // chop image_id
+
+  char *changesdir = pl_call(&#34;mkdtemp&#34;);
+
+  pl_exec_add(&#34;/proc/self/exe&#34;);
+  pl_exec_add(&#34;runb&#34;);
+  pl_exec_add(image_id);
+  pl_exec_add(changesdir);
+
+  if (*argv) {
+
+    // Use login shell
+    pl_exec_add(&#34;/bin/sh&#34;);
+    pl_exec_add(&#34;-lc&#34;);
+    pl_exec_add(&#34;exec env \&#34;$@\&#34;&#34;);
+    pl_exec_add(&#34;--&#34;);
+
+    while (*argv) {
+      pl_exec_add(*argv);
+      argv++;
+    }
+  } else {
+    pl_exec_add(&#34;/bin/sh&#34;);
+  }
+
+  pid_t pid = fork();
+  if (pid == 0) {
+
+    // redirect stdout to stderr
+    if (dup2(STDERR_FILENO, STDOUT_FILENO) == -1)
+      pl_fatal(&#34;dup2&#34;);
+
+    // exec away
+    pl_exec_add(NULL);
+  }
+
+  int exit;
+  if ((exit = pl_wait(pid))) {
+    errno = 0;
+    pl_fatal(&#34;build failed with exit status %d&#34;, exit);
+  }
+
+  char *changesdir_data = NULL;
+  asprintf(&amp;changesdir_data, &#34;%s/data&#34;, changesdir) != -1 ||
+      pl_fatal(&#34;asprintf&#34;);
+  execlp(&#34;/proc/self/exe&#34;, &#34;plash&#34;, &#34;add-layer&#34;, image_id, changesdir_data,
+         NULL);
+  pl_fatal(&#34;execlp&#34;);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

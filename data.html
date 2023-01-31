@@ -1,0 +1,287 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for data</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> data</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash usage: plash data [CMD1 [CMD2 ...]]</pre>
+
+<h2>Description</h2>
+<pre>
+Prints the location of the build data.
+if arguments are given, these arguments will be execed insite the build data.
+
+
+</pre>
+
+
+  <h2>Example</h2>
+  <pre>
+
+$ plash data
+home/myuser/.plashdata
+
+$ plash data ls
+id_counter  index  layer  map  mnt  tmp
+</pre>
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -eux
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• argument is executed
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test hi = &#34;$(plash data printf &#34;hi&#34;)&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• argument is executed in plash data
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash data ls | grep mnt
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash data ls | grep tmp
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash data ls | grep layer
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• argument is executed in directory returned by invocation with no arguments
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out1=$(plash data pwd)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">out2=$(plash data)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$out1&#34; = &#34;$out2&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• HOME influences the plash data
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test $(
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">unset PLASH_DATA
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">HOME=xx
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash data
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">) = &#34;xx/.plashdata&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• PLASH_DATA is the plash data if set
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test $(PLASH_DATA=xx plash data) = xx
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• home directory in /etc/passwd is consulted as fallback
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">homedir=$(getent passwd &#34;$(id -u)&#34; | cut -d: -f6)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test &#34;$(
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">unset HOME
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">unset PLASH_DATA
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash data
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">)&#34; = &#34;$homedir&#34;/.plashdata
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash usage: plash data [CMD1 [CMD2 ...]]\n&#34;
+
+#define _GNU_SOURCE
+
+#include &lt;pwd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+char *get_home_dir() {
+  struct passwd *pwd;
+  char *home_env;
+  if (!(home_env = getenv(&#34;HOME&#34;))) {
+    pwd = getpwuid(getuid());
+    if (!pwd)
+      pl_fatal(&#34;could not determine your home directory&#34;);
+    return pwd-&gt;pw_dir;
+  }
+  return home_env;
+}
+
+char *get_plash_data() {
+  char *plash_data;
+  if (!(plash_data = getenv(&#34;PLASH_DATA&#34;))) {
+    if (asprintf(&amp;plash_data, &#34;%s/.plashdata&#34;, get_home_dir()) == -1)
+      pl_fatal(&#34;asprintf&#34;);
+  }
+  return plash_data;
+}
+
+int data_main(int argc, char *argv[]) {
+  char *plash_data = get_plash_data();
+
+  // if no arguments, print the plash data directory
+  if (argc == 1) {
+    puts(plash_data);
+    return EXIT_SUCCESS;
+  }
+
+  // if arguments given, cd to plash data and exec the arguments
+  if (chdir(plash_data) == -1)
+    pl_fatal(&#34;chdir %s&#34;, plash_data);
+  argv++;
+  pl_unshare_user(); // because some files here might be from a subuid
+                     // (different uid)
+  execvp(argv[0], argv);
+  pl_fatal(&#34;exec %s&#34;, argv[0]);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

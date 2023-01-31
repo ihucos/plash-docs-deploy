@@ -1,0 +1,241 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for import-lxc</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> import-lxc</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash import-lxc DISTRIBUTION:RELEASE [--dry]</pre>
+
+<h2>Description</h2>
+<pre>Import an image from https://images.linuxcontainers.org/
+if --dry is set, the image url is printed but not imported
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -xeu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test_import_lxc () {
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">  plash import-lxc &#34;$1&#34; --dry | xargs curl --head --location --fail | grep &#34;Content-Type: application/x-xz&#34;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">}
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash"># test the test
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! test_import_lxc badimagname )
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">cont=$(plash import-lxc alpine:edge)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash run $cont ls
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• dry import of unknown image fails
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash import-lxc unknownos --dry)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• dry import returns https url
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash import-lxc alpine:edge --dry | grep &#39;^https://&#39;
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Some images give a tar file
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test_import_lxc alpine:edge
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test_import_lxc archlinux:current
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">test_import_lxc debian:sid
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash import-lxc DISTRIBUTION:RELEASE [--dry]\n&#34;
+
+#define HOME_URL &#34;https://images.linuxcontainers.org&#34;
+#define INDEX_URL &#34;https://images.linuxcontainers.org/meta/1.0/index-user&#34;
+#define _GNU_SOURCE
+
+#include &lt;errno.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;sys/utsname.h&gt;
+#include &lt;unistd.h&gt;
+
+#include &lt;plash.h&gt;
+
+char *getarch() {
+  struct utsname unameData;
+  uname(&amp;unameData);
+  if ((strcmp(unameData.machine, &#34;x86_64&#34;)) == 0) {
+    return &#34;amd64&#34;;
+  } else if ((strcmp(unameData.machine, &#34;aarch64&#34;)) == 0) {
+    return &#34;arm64&#34;;
+  }
+  char *dup = strdup(unameData.machine);
+  if (dup == NULL)
+    pl_fatal(&#34;strdup&#34;);
+  return dup;
+}
+
+int import_lxc_main(int argc, char *argv[]) {
+
+  char *prefix, *url_part, *rootfs_url, *image_name, *distro, *version, *line;
+
+  // read args
+  if (argc &lt; 2) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+  image_name = argv[1];
+  int dry = argv[2] &amp;&amp; strcmp(argv[2], &#34;--dry&#34;) == 0;
+
+  // split the first arg
+  distro = strtok(image_name, &#34;:&#34;);
+  version = strtok(NULL, &#34;:&#34;);
+  if (version == NULL)
+    pl_fatal(&#34;also specify the release, example: debian:sid&#34;);
+
+  FILE *curl_out;
+  pid_t pid = pl_spawn_process((char *[]){&#34;curl&#34;, &#34;--progress-bar&#34;, &#34;--fail&#34;,
+                                          &#34;--location&#34;, INDEX_URL, NULL},
+                               NULL, &amp;curl_out, NULL);
+
+  int curl_exit = pl_wait(pid);
+  if (curl_exit != 0)
+    pl_fatal(&#34;curl exited badly&#34;);
+
+  asprintf(&amp;prefix, &#34;%s;%s;%s;default;&#34;, distro, version, getarch()) != -1 ||
+      pl_fatal(&#34;asprintf&#34;);
+
+  while ((line = pl_nextline(curl_out))) {
+    if (strncmp(line, prefix, strlen(prefix)) == 0) {
+      line = strdup(line);
+      url_part = line + strlen(prefix);   // rewind away from our found prefix
+      url_part += strcspn(url_part, &#34;;&#34;); // go to the next &#34;;&#34;
+      url_part += 1;                      // chop that last &#34;;&#34;
+      asprintf(&amp;rootfs_url, HOME_URL &#34;%srootfs.tar.xz&#34;, url_part) != -1 ||
+          pl_fatal(&#34;asprintf&#34;);
+
+      // we got the root file system process with it how the user requested
+      if (dry) {
+        puts(rootfs_url);
+        return EXIT_SUCCESS;
+      } else {
+        execlp(&#34;/proc/self/exe&#34;, &#34;plash&#34;, &#34;import-url&#34;, rootfs_url, NULL);
+        pl_fatal(&#34;execlp&#34;);
+      }
+    }
+  }
+
+  errno = 0;
+  pl_fatal(&#34;%s:%s not listed in &#34; HOME_URL &#34;/&#34;, distro, version);
+  return EXIT_FAILURE;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>

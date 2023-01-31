@@ -1,0 +1,143 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>plash reference for rm</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<link rel="stylesheet" type="text/css" href="assets/style.css"/>
+
+</head>
+<body>
+<section>
+
+
+<a href="https://github.com/ihucos/plash"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+
+<br>
+<hr/>
+<h1><a href="index.html">plash</a> rm</h1>
+<hr/>
+
+<h2>Usage</h2>
+<pre>plash rm IMAGE_ID</pre>
+
+<h2>Description</h2>
+<pre>Deletes the given image atomically. Running containers based on that image
+have an undefined behaviour.
+</pre>
+
+
+
+
+  <h2>Tested Behaviour</h2>
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">#!/bin/sh
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">set -xeu
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• plash nodepath subcommand does not know deleted containers
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">newcont=$(plash build -f 1 --invalidate-layer)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash nodepath $newcont
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash rm $newcont
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash nodepath $newcont)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Specifying an unknown container errors
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">(! plash rm 9999999)
+</code></pre>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">
+</code></pre>
+    
+  
+    
+      <h3>• Can be used together with the &#34;b&#34; subcommand
+</h3>
+    
+  
+    
+      <pre style="display: inline; margin: 0px; opacity: 0.5;"><code class="language-bash">plash b rm -f 1 --run &#39;touch /plash-rm-test-file&#39;
+</code></pre>
+    
+  
+
+
+<h2>Source Code</h2>
+<pre><code>
+#define USAGE &#34;usage: plash rm IMAGE_ID\n&#34;
+
+#include &lt;plash.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+int rm_main(int argc, char *argv[]) {
+  if (argc != 2) {
+    fputs(USAGE, stderr);
+    return EXIT_FAILURE;
+  }
+
+  char *nodepath = pl_call(&#34;nodepath&#34;, argv[1]);
+  char *tmp = pl_call(&#34;mkdtemp&#34;);
+
+  pl_unshare_user();
+
+  if (rename(nodepath, tmp) == -1)
+    pl_fatal(&#34;rename %s %s&#34;, nodepath, tmp);
+
+  execlp(&#34;rm&#34;, &#34;rm&#34;, &#34;-rf&#34;, tmp, NULL);
+  pl_fatal(&#34;execlp&#34;);
+  return EXIT_SUCCESS;
+}
+</code></pre>
+
+
+</section>
+</body>
+</html>
